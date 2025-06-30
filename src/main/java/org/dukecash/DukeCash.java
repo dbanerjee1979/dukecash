@@ -8,10 +8,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.util.Optional;
+import java.io.File;
 
 import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
 
@@ -49,22 +51,37 @@ public class DukeCash extends Application {
     }
 
     private void quit(Stage stage, WindowEvent ev) {
-        if (changesPending.get()) {
-            Optional<ButtonType> result = new Alert(
-                    CONFIRMATION,
-                    "There are unsaved changes. Quit?",
-                    ButtonType.YES, ButtonType.NO).showAndWait();
-            if (result.isEmpty() || result.get() == ButtonType.NO) {
-                if (ev != null) {
-                    ev.consume();
-                }
-                return;
+        if (!proceedWithUnsavedChanges()) {
+            if (ev != null) {
+                ev.consume();
             }
+            return;
         }
         config.save();
         if (ev == null) {
             stage.close();
         }
+    }
+
+    private void open(Stage stage) {
+        if (proceedWithUnsavedChanges()) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Open File");
+            fileChooser.getExtensionFilters().add(new ExtensionFilter("DukeCash Files", "*.dukecash"));
+            File selectedFile = fileChooser.showOpenDialog(stage);
+            System.out.println(selectedFile);
+        }
+    }
+
+    private boolean proceedWithUnsavedChanges() {
+        return !changesPending.get() ||
+                new Alert(
+                        CONFIRMATION,
+                        "There are unsaved changes. Proceed?",
+                        ButtonType.YES, ButtonType.NO)
+                    .showAndWait()
+                    .map(result -> result == ButtonType.YES)
+                    .orElse(false);
     }
 
     private MenuBar createMenubar(Stage stage) {
@@ -80,6 +97,7 @@ public class DukeCash extends Application {
         MenuItem openFileMenuItem = new MenuItem("_Open File");
         openFileMenuItem.setMnemonicParsing(true);
         openFileMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
+        openFileMenuItem.setOnAction(ev -> this.open(stage));
 
         MenuItem saveFileMenuItem = new MenuItem("_Save File");
         saveFileMenuItem.setMnemonicParsing(true);
@@ -88,7 +106,7 @@ public class DukeCash extends Application {
 
         MenuItem quitMenuItem = new MenuItem("_Quit");
         quitMenuItem.setMnemonicParsing(true);
-        quitMenuItem.setAccelerator(KeyCombination.keyCombination("Alt+F4"));
+        quitMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Q"));
         quitMenuItem.setOnAction(ev -> this.quit(stage, null));
 
         Menu fileMenu = new Menu("_File");
