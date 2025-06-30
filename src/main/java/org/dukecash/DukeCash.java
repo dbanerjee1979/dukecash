@@ -20,6 +20,10 @@ public class DukeCash extends Application {
 
     private Config config;
 
+    public static void main(String[] args) {
+        launch();
+    }
+
     @Override
     public void start(Stage stage) {
         this.config = new Config();
@@ -99,9 +103,5 @@ public class DukeCash extends Application {
         menus.add(fileMenu);
 
         return menubar;
-    }
-
-    public static void main(String[] args) {
-        launch();
     }
 }
