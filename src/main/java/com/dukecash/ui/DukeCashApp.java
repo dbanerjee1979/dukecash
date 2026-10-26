@@ -21,7 +21,6 @@ public class DukeCashApp extends JFrame {
     private final JTabbedPane tabs = new JTabbedPane();
     private final ButtonGroup accountButtonGroup = new ButtonGroup();
     private final JMenu windowMenu;
-    private final JMenuItem closeItem;
     private final int windowInsertIndex;
 
     public DukeCashApp() {
@@ -29,12 +28,19 @@ public class DukeCashApp extends JFrame {
 
         tabs.add("Accounts", new AccountsPanel(openAccounts, accountSelection));
 
+        JMenuItem closeItem;
+        JRadioButtonMenuItem accountsItem;
         add(menuBar(windowMenu = menu("Window", 'W',
-                        closeItem = menuItem("Close", 'C', this::onAccountClose, KeyStroke.getKeyStroke(VK_F4, CTRL_DOWN_MASK)),
-                        menuItem("Accounts", 'A', _ -> accountSelection.clearSelection(), KeyStroke.getKeyStroke(VK_0, CTRL_DOWN_MASK)))),
+                        closeItem = menuItem("Close", 'C', this::onAccountClose,
+                                KeyStroke.getKeyStroke(VK_F4, CTRL_DOWN_MASK)),
+                        accountsItem = radioMenuItem("Accounts", 'A', _ -> accountSelection.clearSelection(),
+                                KeyStroke.getKeyStroke(VK_0, CTRL_DOWN_MASK), accountButtonGroup))),
                 NORTH);
-        closeItem.setEnabled(false);
         this.windowInsertIndex = windowMenu.getItemCount();
+        closeItem.setEnabled(false);
+        accountSelection.addListSelectionListener(_ -> closeItem.setEnabled(!accountSelection.isSelectionEmpty()));
+        accountsItem.setSelected(true);
+        accountSelection.addListSelectionListener(_ -> accountsItem.setSelected(accountSelection.isSelectionEmpty()));
 
         add(tabs, CENTER);
 
@@ -77,6 +83,15 @@ public class DukeCashApp extends JFrame {
         return menuItem;
     }
 
+    private JRadioButtonMenuItem radioMenuItem(String title, char mnenomic, ActionListener actionListener, KeyStroke accelerator, ButtonGroup buttonGroup) {
+        JRadioButtonMenuItem menuItem = new JRadioButtonMenuItem(title);
+        menuItem.setMnemonic(mnenomic);
+        menuItem.addActionListener(actionListener);
+        menuItem.setAccelerator(accelerator);
+        buttonGroup.add(menuItem);
+        return menuItem;
+    }
+
     private void onAccountClose(ActionEvent ev) {
         openAccounts.remove(accountSelection.getMaxSelectionIndex());
     }
@@ -108,12 +123,10 @@ public class DukeCashApp extends JFrame {
         if (accountSelection.getSelectedItemsCount() == 0) {
             t = 0;
             accountButtonGroup.clearSelection();
-            closeItem.setEnabled(false);
         } else {
             int i = accountSelection.getMaxSelectionIndex();
             t = i + 1;
-            accountButtonGroup.setSelected(windowMenu.getItem(windowInsertIndex + i).getModel(), true);
-            closeItem.setEnabled(true);
+            windowMenu.getItem(windowInsertIndex + i).setSelected(true);
         }
 
         if (tabs.getSelectedIndex() != t) {
