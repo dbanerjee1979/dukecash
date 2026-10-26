@@ -20,37 +20,41 @@ public class DukeCashApp extends JFrame {
 
     private final JTabbedPane tabs = new JTabbedPane();
     private final ButtonGroup accountButtonGroup = new ButtonGroup();
-    private final JMenu windowMenu;
-    private final int windowInsertIndex;
 
     public DukeCashApp() {
         super("DukeCash");
 
+        accountSelection.setSelectionMode(SINGLE_SELECTION);
+
+        add(tabs, CENTER);
+        tabs.addChangeListener(this::onTabsChanged);
+
         tabs.add("Accounts", new AccountsPanel(openAccounts, accountSelection));
+        TabsManager tabsManager = new TabsManager();
+        openAccounts.addListDataListener(tabsManager);
+        accountSelection.addListSelectionListener(tabsManager);
 
         JMenuItem closeItem;
         JRadioButtonMenuItem accountsItem;
+        JMenu windowMenu;
         add(menuBar(windowMenu = menu("Window", 'W',
                         closeItem = menuItem("Close", 'C', this::onAccountClose,
                                 KeyStroke.getKeyStroke(VK_F4, CTRL_DOWN_MASK)),
                         accountsItem = radioMenuItem("Accounts", 'A', _ -> accountSelection.clearSelection(),
                                 KeyStroke.getKeyStroke(VK_0, CTRL_DOWN_MASK), accountButtonGroup))),
                 NORTH);
-        this.windowInsertIndex = windowMenu.getItemCount();
+
+        WindowMenuManager windowMenuManager = new WindowMenuManager(windowMenu);
+        openAccounts.addListDataListener(windowMenuManager);
+        accountSelection.addListSelectionListener(windowMenuManager);
+
         closeItem.setEnabled(false);
         accountSelection.addListSelectionListener(_ -> closeItem.setEnabled(!accountSelection.isSelectionEmpty()));
+
         accountsItem.setSelected(true);
         accountSelection.addListSelectionListener(_ -> accountsItem.setSelected(accountSelection.isSelectionEmpty()));
 
-        add(tabs, CENTER);
-
         setSize(1024, 768);
-
-        tabs.addChangeListener(this::onTabsChanged);
-
-        accountSelection.setSelectionMode(SINGLE_SELECTION);
-        accountSelection.addListSelectionListener(this::onSelectionChanged);
-        openAccounts.addListDataListener(new OpenAccountsListener());
     }
 
     private JMenuBar menuBar(JMenu... menus) {
@@ -98,7 +102,7 @@ public class DukeCashApp extends JFrame {
 
     private void onTabsChanged(ChangeEvent ev) {
         if (tabs.getSelectedIndex() == 0) {
-            accountSelection.clearSelection();;
+            accountSelection.clearSelection();
         } else {
             int i = tabs.getSelectedIndex() - 1;
             if (accountSelection.getMaxSelectionIndex() != i) {
@@ -118,32 +122,20 @@ public class DukeCashApp extends JFrame {
         app.setVisible(true);
     }
 
-    private void onSelectionChanged(ListSelectionEvent ev) {
-        int t;
-        if (accountSelection.getSelectedItemsCount() == 0) {
-            t = 0;
-            accountButtonGroup.clearSelection();
-        } else {
-            int i = accountSelection.getMaxSelectionIndex();
-            t = i + 1;
-            windowMenu.getItem(windowInsertIndex + i).setSelected(true);
+    private class WindowMenuManager implements ListDataListener, ListSelectionListener {
+        private final JMenu windowMenu;
+        private final int windowInsertIndex;
+
+        public WindowMenuManager(JMenu windowMenu) {
+            this.windowMenu = windowMenu;
+            this.windowInsertIndex = windowMenu.getItemCount();
         }
 
-        if (tabs.getSelectedIndex() != t) {
-            tabs.setSelectedIndex(t);
-        }
-    }
-
-    private class OpenAccountsListener implements ListDataListener {
         @Override
         public void intervalAdded(ListDataEvent ev) {
             for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
                 int account = i;
-                int tab = i + 1;
-                tabs.add(new JLabel("Transactions"), tab);
-                String accountName = openAccounts.get(i).getName();
-                tabs.setTitleAt(tab, accountName);
-                JRadioButtonMenuItem menuItem = new JRadioButtonMenuItem(accountName);
+                JRadioButtonMenuItem menuItem = new JRadioButtonMenuItem(openAccounts.get(i).getName());
                 menuItem.addActionListener(_ -> accountSelection.addSelectionInterval(account, account));
                 accountButtonGroup.add(menuItem);
                 windowMenu.add(menuItem, windowInsertIndex + i);
@@ -155,17 +147,10 @@ public class DukeCashApp extends JFrame {
 
         @Override
         public void intervalRemoved(ListDataEvent ev) {
-            int tab = ev.getIndex0() + 1;
             int wpos = ev.getIndex0() + windowInsertIndex;
             for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
-                tabs.remove(tab);
                 accountButtonGroup.remove(windowMenu.getItem(wpos));
                 windowMenu.remove(wpos);
-            }
-
-            accountSelection.clearSelection();
-            if (ev.getIndex0() < openAccounts.size()) {
-                accountSelection.addSelectionInterval(ev.getIndex0(), ev.getIndex0());
             }
 
             int n = Math.min(9, openAccounts.size());
@@ -177,7 +162,55 @@ public class DukeCashApp extends JFrame {
         @Override
         public void contentsChanged(ListDataEvent ev) {
             for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
+                windowMenu.getItem(windowInsertIndex + i).setText(openAccounts.get(i).getName());
+            }
+        }
+
+        @Override
+        public void valueChanged(ListSelectionEvent ev) {
+            if (accountSelection.getSelectedItemsCount() > 0) {
+                int i = accountSelection.getMaxSelectionIndex();
+                windowMenu.getItem(windowInsertIndex + i).setSelected(true);
+            }
+        }
+    }
+
+    private class TabsManager implements ListDataListener, ListSelectionListener {
+        @Override
+        public void intervalAdded(ListDataEvent ev) {
+            for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
+                int tab = i + 1;
+                tabs.add(new JLabel("Transactions"), tab);
+                String accountName = openAccounts.get(i).getName();
+                tabs.setTitleAt(tab, accountName);
+            }
+        }
+
+        @Override
+        public void intervalRemoved(ListDataEvent ev) {
+            int tab = ev.getIndex0() + 1;
+            for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
+                tabs.remove(tab);
+            }
+
+            accountSelection.clearSelection();
+            if (ev.getIndex0() < openAccounts.size()) {
+                accountSelection.addSelectionInterval(ev.getIndex0(), ev.getIndex0());
+            }
+        }
+
+        @Override
+        public void contentsChanged(ListDataEvent ev) {
+            for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
                 tabs.setTitleAt(i + 1, openAccounts.get(i).getName());
+            }
+        }
+
+        @Override
+        public void valueChanged(ListSelectionEvent ev) {
+            int t = accountSelection.getSelectedItemsCount() == 0 ? 0 : accountSelection.getMaxSelectionIndex() + 1;
+            if (tabs.getSelectedIndex() != t) {
+                tabs.setSelectedIndex(t);
             }
         }
     }
