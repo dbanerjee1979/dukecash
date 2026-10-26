@@ -1,11 +1,20 @@
 package com.dukecash.ui;
 
+import org.jdesktop.swingx.JXTreeTable;
+
 import javax.swing.*;
 import java.awt.*;
+
+import static java.awt.BorderLayout.CENTER;
 
 public class DukeCashApp extends JFrame {
     public DukeCashApp() {
         super("DukeCash");
+
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.add("Accounts", new AccountsPanel());
+
+        add(tabs, CENTER);
 
         setSize(1024, 768);
     }
