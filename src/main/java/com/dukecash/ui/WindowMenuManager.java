@@ -9,7 +9,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
-import static java.awt.event.KeyEvent.VK_1;
+import static java.awt.event.KeyEvent.*;
 
 public class WindowMenuManager implements ListDataListener, ListSelectionListener {
     private final JMenu windowMenu;
@@ -18,11 +18,29 @@ public class WindowMenuManager implements ListDataListener, ListSelectionListene
     private final DefaultListModel<Account> openAccounts;
     private final ListSelectionModel accountSelection;
 
-    public WindowMenuManager(JMenu windowMenu, ButtonGroup accountButtonGroup,
+    public WindowMenuManager(JMenu windowMenu,
                              DefaultListModel<Account> openAccounts, ListSelectionModel accountSelection) {
         this.windowMenu = windowMenu;
+        this.accountButtonGroup = new ButtonGroup();
+
+        JMenuItem closeItem = new JMenuItem("Close");
+        closeItem.setMnemonic('C');
+        closeItem.setAccelerator(KeyStroke.getKeyStroke(VK_F4, CTRL_DOWN_MASK));
+        closeItem.setEnabled(false);
+        closeItem.addActionListener(_ -> openAccounts.remove(accountSelection.getMaxSelectionIndex()));
+        accountSelection.addListSelectionListener(_ -> closeItem.setEnabled(!accountSelection.isSelectionEmpty()));
+        windowMenu.add(closeItem);
+
+        JRadioButtonMenuItem accountsItem = new JRadioButtonMenuItem("Accounts");
+        accountsItem.setMnemonic('A');
+        accountsItem.setAccelerator(KeyStroke.getKeyStroke(VK_0, CTRL_DOWN_MASK));
+        accountsItem.setSelected(true);
+        accountsItem.addActionListener(_ -> accountSelection.clearSelection());
+        accountSelection.addListSelectionListener(_ -> accountsItem.setSelected(accountSelection.isSelectionEmpty()));
+        windowMenu.add(accountsItem);
+        accountButtonGroup.add(accountsItem);
+
         this.windowInsertIndex = windowMenu.getItemCount();
-        this.accountButtonGroup = accountButtonGroup;
         this.openAccounts = openAccounts;
         this.accountSelection = accountSelection;
         openAccounts.addListDataListener(this);
