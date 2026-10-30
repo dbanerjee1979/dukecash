@@ -54,7 +54,8 @@ public class TabsManager implements ListDataListener, ListSelectionListener {
 
     @Override
     public void valueChanged(ListSelectionEvent ev) {
-        int t = accountSelection.getSelectedItemsCount() == 0 ? 0 : accountSelection.getMaxSelectionIndex() + 1;
+        int t = accountSelection.getSelectedItemsCount() == 0 ? 0 :
+                Math.min(accountSelection.getMaxSelectionIndex() + 1, tabs.getTabCount() - 1);
         if (tabs.getSelectedIndex() != t) {
             tabs.setSelectedIndex(t);
         }

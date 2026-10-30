@@ -15,7 +15,6 @@ public class DukeCashApp extends JFrame {
 
     private final JTabbedPane tabs = new JTabbedPane();
     private final TabsManager tabsManager;
-    private final WindowMenuManager windowMenuManager;
 
     public DukeCashApp() {
         super("DukeCash");
@@ -28,15 +27,12 @@ public class DukeCashApp extends JFrame {
         tabs.add("Accounts", new AccountsPanel(openAccounts, accountSelection));
 
         JMenuBar menuBar = new JMenuBar();
-        JMenu windowMenu = new JMenu("Window");
-        windowMenu.setMnemonic('W');
-        menuBar.add(windowMenu);
+        menuBar.add(new WindowMenu(openAccounts, accountSelection));
         add(menuBar, NORTH);
 
         setSize(1024, 768);
 
         this.tabsManager = new TabsManager(tabs, openAccounts, accountSelection);
-        this.windowMenuManager = new WindowMenuManager(windowMenu, openAccounts, accountSelection);
     }
 
     private void onTabsChanged(ChangeEvent ev) {
