@@ -8,14 +8,12 @@ import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-public class TabsManager implements ListDataListener, ListSelectionListener {
-    private final JTabbedPane tabs;
+public class AccountTabs extends JTabbedPane implements ListDataListener, ListSelectionListener {
     private final DefaultListModel<Account> openAccounts;
     private final ListSelectionModel accountSelection;
 
-    public TabsManager(JTabbedPane tabs, DefaultListModel<Account> openAccounts,
+    public AccountTabs(DefaultListModel<Account> openAccounts,
                        ListSelectionModel accountSelection) {
-        this.tabs = tabs;
         this.openAccounts = openAccounts;
         this.accountSelection = accountSelection;
         openAccounts.addListDataListener(this);
@@ -26,9 +24,9 @@ public class TabsManager implements ListDataListener, ListSelectionListener {
     public void intervalAdded(ListDataEvent ev) {
         for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
             int tab = i + 1;
-            tabs.add(new JLabel("Transactions"), tab);
+            add(new JLabel("Transactions"), tab);
             String accountName = openAccounts.get(i).getName();
-            tabs.setTitleAt(tab, accountName);
+            setTitleAt(tab, accountName);
         }
     }
 
@@ -36,7 +34,7 @@ public class TabsManager implements ListDataListener, ListSelectionListener {
     public void intervalRemoved(ListDataEvent ev) {
         int tab = ev.getIndex0() + 1;
         for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
-            tabs.remove(tab);
+            remove(tab);
         }
 
         accountSelection.clearSelection();
@@ -48,16 +46,16 @@ public class TabsManager implements ListDataListener, ListSelectionListener {
     @Override
     public void contentsChanged(ListDataEvent ev) {
         for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
-            tabs.setTitleAt(i + 1, openAccounts.get(i).getName());
+            setTitleAt(i + 1, openAccounts.get(i).getName());
         }
     }
 
     @Override
     public void valueChanged(ListSelectionEvent ev) {
         int t = accountSelection.getSelectedItemsCount() == 0 ? 0 :
-                Math.min(accountSelection.getMaxSelectionIndex() + 1, tabs.getTabCount() - 1);
-        if (tabs.getSelectedIndex() != t) {
-            tabs.setSelectedIndex(t);
+                Math.min(accountSelection.getMaxSelectionIndex() + 1, getTabCount() - 1);
+        if (getSelectedIndex() != t) {
+            setSelectedIndex(t);
         }
     }
 }
