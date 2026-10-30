@@ -3,10 +3,7 @@ package com.dukecash.ui;
 import com.dukecash.model.Account;
 
 import javax.swing.*;
-import javax.swing.event.ListDataEvent;
-import javax.swing.event.ListDataListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.*;
 
 public class AccountTabs extends JTabbedPane implements ListDataListener, ListSelectionListener {
     private final DefaultListModel<Account> openAccounts;
@@ -16,8 +13,10 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
                        ListSelectionModel accountSelection) {
         this.openAccounts = openAccounts;
         this.accountSelection = accountSelection;
+        add("Accounts", new AccountsPanel(openAccounts, accountSelection));
         openAccounts.addListDataListener(this);
         accountSelection.addListSelectionListener(this);
+        addChangeListener(this::onTabsChanged);
     }
 
     @Override
@@ -56,6 +55,17 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
                 Math.min(accountSelection.getMaxSelectionIndex() + 1, getTabCount() - 1);
         if (getSelectedIndex() != t) {
             setSelectedIndex(t);
+        }
+    }
+
+    private void onTabsChanged(ChangeEvent ev) {
+        if (getSelectedIndex() == 0) {
+            accountSelection.clearSelection();
+        } else {
+            int i = getSelectedIndex() - 1;
+            if (accountSelection.getMaxSelectionIndex() != i) {
+                accountSelection.addSelectionInterval(i, i);
+            }
         }
     }
 }

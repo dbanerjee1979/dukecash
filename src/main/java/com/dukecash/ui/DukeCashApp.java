@@ -10,39 +10,22 @@ import static java.awt.BorderLayout.NORTH;
 import static javax.swing.ListSelectionModel.SINGLE_SELECTION;
 
 public class DukeCashApp extends JFrame {
-    private final ListSelectionModel accountSelection = new DefaultListSelectionModel();
-
-    private final JTabbedPane tabs;
 
     public DukeCashApp() {
         super("DukeCash");
 
+        ListSelectionModel accountSelection = new DefaultListSelectionModel();
         accountSelection.setSelectionMode(SINGLE_SELECTION);
 
         DefaultListModel<Account> openAccounts = new DefaultListModel<>();
 
-        this.tabs = new AccountTabs(openAccounts, accountSelection);
-        add(tabs, CENTER);
-        tabs.addChangeListener(this::onTabsChanged);
-
-        tabs.add("Accounts", new AccountsPanel(openAccounts, accountSelection));
+        add(new AccountTabs(openAccounts, accountSelection), CENTER);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(new WindowMenu(openAccounts, accountSelection));
         add(menuBar, NORTH);
 
         setSize(1024, 768);
-    }
-
-    private void onTabsChanged(ChangeEvent ev) {
-        if (tabs.getSelectedIndex() == 0) {
-            accountSelection.clearSelection();
-        } else {
-            int i = tabs.getSelectedIndex() - 1;
-            if (accountSelection.getMaxSelectionIndex() != i) {
-                accountSelection.addSelectionInterval(i, i);
-            }
-        }
     }
 
     static void main() {
