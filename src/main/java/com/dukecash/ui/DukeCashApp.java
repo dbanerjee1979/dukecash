@@ -1,9 +1,13 @@
 package com.dukecash.ui;
 
 import com.dukecash.model.Account;
+import com.dukecash.model.AccountsTreeTableModel;
+import com.dukecash.model.TransactionsModel;
 
 import javax.swing.*;
-import javax.swing.event.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import static java.awt.BorderLayout.CENTER;
 import static java.awt.BorderLayout.NORTH;
@@ -19,7 +23,18 @@ public class DukeCashApp extends JFrame {
 
         DefaultListModel<Account> openAccounts = new DefaultListModel<>();
 
-        add(new AccountTabs(openAccounts, accountSelection), CENTER);
+        AccountsTreeTableModel accountsModel = new AccountsTreeTableModel();
+
+        TransactionsModel transactionsModel = new TransactionsModel();
+        transactionsModel.appendTransaction(LocalDate.now(), "Opening Balance", new BigDecimal("100000"),
+                accountsModel.findAccount("Opening Balances"),
+                accountsModel.findAccount("Checking Account"));
+        transactionsModel.appendTransaction(LocalDate.now(), "Opening Balance", new BigDecimal("500000"),
+                accountsModel.findAccount("Opening Balances"),
+                accountsModel.findAccount("Savings Account"));
+        transactionsModel.deleteTransaction(0);
+
+        add(new AccountTabs(accountsModel, openAccounts, accountSelection), CENTER);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(new WindowMenu(openAccounts, accountSelection));

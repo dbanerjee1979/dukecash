@@ -60,4 +60,8 @@ public class AccountsTreeTableModel extends AbstractTreeTableModel {
     public int getIndexOfChild(Object parent, Object child) {
         return ((Account) parent).getIndex((Account) child);
     }
+
+    public Account findAccount(String name) {
+        return ((Account) root).findAccount(name);
+    }
 }

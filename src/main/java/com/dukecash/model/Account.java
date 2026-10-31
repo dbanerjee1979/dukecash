@@ -1,6 +1,9 @@
 package com.dukecash.model;
 
 import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
+import org.jdesktop.swingx.treetable.MutableTreeTableNode;
+
+import java.util.NoSuchElementException;
 
 public class Account extends DefaultMutableTreeTableNode {
     private final String name;
@@ -48,5 +51,27 @@ public class Account extends DefaultMutableTreeTableNode {
 
     public boolean isPlaceholder() {
         return placeholder;
+    }
+
+    public Account findAccount(String name) {
+        Account found = findAccountImpl(name);
+        if (found == null) {
+            throw new NoSuchElementException("Account with name %s not found".formatted(name));
+        }
+        return found;
+    }
+
+    private Account findAccountImpl(String name) {
+        if (this.name.equals(name)) {
+            return this;
+        }
+        for (MutableTreeTableNode child : children) {
+            Account account = (Account) child;
+            Account found = account.findAccountImpl(name);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 }

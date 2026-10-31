@@ -1,6 +1,7 @@
 package com.dukecash.ui;
 
 import com.dukecash.model.Account;
+import com.dukecash.model.AccountsTreeTableModel;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -9,11 +10,11 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
     private final DefaultListModel<Account> openAccounts;
     private final ListSelectionModel accountSelection;
 
-    public AccountTabs(DefaultListModel<Account> openAccounts,
+    public AccountTabs(AccountsTreeTableModel accountsModel, DefaultListModel<Account> openAccounts,
                        ListSelectionModel accountSelection) {
         this.openAccounts = openAccounts;
         this.accountSelection = accountSelection;
-        add("Accounts", new AccountsPanel(openAccounts, accountSelection));
+        add("Accounts", new AccountsPanel(accountsModel, openAccounts, accountSelection));
         openAccounts.addListDataListener(this);
         accountSelection.addListSelectionListener(this);
         addChangeListener(this::onTabsChanged);

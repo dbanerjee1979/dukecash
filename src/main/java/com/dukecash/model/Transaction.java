@@ -1,0 +1,35 @@
+package com.dukecash.model;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Transaction {
+    private LocalDate date;
+    private String description;
+    private List<Split> splits = new ArrayList<>();
+
+    public Transaction(LocalDate date, String description, BigDecimal amount, Account from, Account to) {
+        this.date = date;
+        this.description = description;
+        this.splits.add(new Split(this, description, from, amount, PaymentType.Credit));
+        this.splits.add(new Split(this, description, to, amount, PaymentType.Debit));
+    }
+
+    public Split getSplit(int s) {
+        return splits.get(s);
+    }
+
+    public int getSplitCount() {
+        return splits.size();
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+}

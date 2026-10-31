@@ -14,10 +14,10 @@ import java.math.BigDecimal;
 import static javax.swing.tree.TreeSelectionModel.*;
 
 public class AccountsPanel extends JPanel {
-    public AccountsPanel(DefaultListModel<Account> openAccounts, ListSelectionModel accountSelection) {
+    public AccountsPanel(AccountsTreeTableModel accountsModel, DefaultListModel<Account> openAccounts, ListSelectionModel accountSelection) {
         setLayout(new BorderLayout());
 
-        JXTreeTable accountTree = new JXTreeTable(new AccountsTreeTableModel());
+        JXTreeTable accountTree = new JXTreeTable(accountsModel);
         accountTree.setDefaultRenderer(BigDecimal.class, new CurrencyCellRenderer());
         accountTree.setSelectionMode(SINGLE_TREE_SELECTION);
         accountTree.addMouseListener(new AccountstMouseListener(accountTree, openAccounts, accountSelection));
