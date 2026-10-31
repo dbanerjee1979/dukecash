@@ -33,7 +33,7 @@ public class DukeCashApp extends JFrame {
                 accountsModel.findAccount("Opening Balances"),
                 accountsModel.findAccount("Savings Account"));
 
-        add(new AccountTabs(accountsModel, transactionsModel, openAccounts, accountSelection), CENTER);
+        add(new AccountTabs(accountsModel, openAccounts, accountSelection), CENTER);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(new WindowMenu(openAccounts, accountSelection));

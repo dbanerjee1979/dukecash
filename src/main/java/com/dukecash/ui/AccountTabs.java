@@ -2,7 +2,6 @@ package com.dukecash.ui;
 
 import com.dukecash.model.Account;
 import com.dukecash.model.AccountsTreeTableModel;
-import com.dukecash.model.TransactionsModel;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -11,11 +10,9 @@ import java.math.BigDecimal;
 public class AccountTabs extends JTabbedPane implements ListDataListener, ListSelectionListener {
     private final DefaultListModel<Account> openAccounts;
     private final ListSelectionModel accountSelection;
-    private final TransactionsModel transactionsModel;
 
-    public AccountTabs(AccountsTreeTableModel accountsModel, TransactionsModel transactionsModel, DefaultListModel<Account> openAccounts,
+    public AccountTabs(AccountsTreeTableModel accountsModel, DefaultListModel<Account> openAccounts,
                        ListSelectionModel accountSelection) {
-        this.transactionsModel = transactionsModel;
         this.openAccounts = openAccounts;
         this.accountSelection = accountSelection;
         add("Accounts", new AccountsPanel(accountsModel, openAccounts, accountSelection));
@@ -30,9 +27,8 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
             int tab = i + 1;
             Account account = openAccounts.get(i);
 
-            JTable table = new JTable(transactionsModel);
+            JTable table = new JTable(account.getTableModel());
             table.setDefaultRenderer(BigDecimal.class, new CurrencyCellRenderer());
-            table.setRowSorter(account.getRowSorter());
             add(new JScrollPane(table), tab);
 
             String accountName = account.getName();
