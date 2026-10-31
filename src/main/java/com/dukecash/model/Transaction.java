@@ -32,4 +32,8 @@ public class Transaction {
     public String getDescription() {
         return description;
     }
+
+    public boolean hasAccount(Account account) {
+        return splits.stream().anyMatch(split -> split.getAccount() == account);
+    }
 }

@@ -2,15 +2,16 @@ package com.dukecash.model;
 
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 
-import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.math.BigDecimal;
 
 public class AccountsTreeTableModel extends AbstractTreeTableModel {
     public static final int COL_NAME = 0;
     public static final int COL_BALANCE = 1;
 
-    public AccountsTreeTableModel() {
-        super(Account.sampleAccounts());
+    public AccountsTreeTableModel(TransactionsModel transactionsModel) {
+        super(Account.sampleAccounts(transactionsModel));
+        ((Account) getRoot()).setAccountsTreeTableModel(this);
     }
 
     @Override
@@ -41,7 +42,7 @@ public class AccountsTreeTableModel extends AbstractTreeTableModel {
         Account account = (Account) row;
         return switch (column) {
             case COL_NAME -> account.getName();
-            case COL_BALANCE -> BigDecimal.ZERO;
+            case COL_BALANCE -> account.getBalance();
             default -> null;
         };
     }
@@ -63,5 +64,9 @@ public class AccountsTreeTableModel extends AbstractTreeTableModel {
 
     public Account findAccount(String name) {
         return ((Account) root).findAccount(name);
+    }
+
+    public void fireAccountBalanceChanged(Account account) {
+        modelSupport.firePathChanged(account.getPath());
     }
 }

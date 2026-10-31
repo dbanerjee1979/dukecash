@@ -32,4 +32,8 @@ public class Split {
     public BigDecimal getCredit() {
         return paymentType == PaymentType.Credit ? amount : null;
     }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
 }

@@ -12,6 +12,7 @@ public class TransactionsModel extends AbstractTableModel {
     public static final int COL_ACCOUNT = 2;
     public static final int COL_DEBIT = 3;
     public static final int COL_CREDIT = 4;
+    public static final int COL_AMOUNT = 5;
 
     private final TreeMap<Integer, Transaction> transactions = new TreeMap<>();
     private int size;
@@ -24,6 +25,18 @@ public class TransactionsModel extends AbstractTableModel {
     @Override
     public int getColumnCount() {
         return 5;
+    }
+
+    @Override
+    public String getColumnName(int column) {
+        return switch (column) {
+            case COL_DATE -> "Date";
+            case COL_DESCRIPTION -> "Description";
+            case COL_ACCOUNT ->  "Account";
+            case COL_DEBIT -> "Debit";
+            case COL_CREDIT -> "Credit";
+            default -> "";
+        };
     }
 
     @Override
@@ -50,8 +63,17 @@ public class TransactionsModel extends AbstractTableModel {
             case COL_ACCOUNT -> split.getAccount();
             case COL_DEBIT -> split.getDebit();
             case COL_CREDIT -> split.getCredit();
+            case COL_AMOUNT -> split.getAmount();
             default -> null;
         };
+    }
+
+    public boolean isTransaction(Account account, int row) {
+        Entry<Integer, Transaction> entry = transactions.floorEntry(row);
+        if (entry == null) {
+            throw new NoSuchElementException("No transaction at row " + row);
+        }
+        return entry.getValue().hasAccount(account);
     }
 
     public void appendTransaction(LocalDate date, String description, BigDecimal amount, Account from, Account to) {

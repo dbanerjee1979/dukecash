@@ -23,18 +23,17 @@ public class DukeCashApp extends JFrame {
 
         DefaultListModel<Account> openAccounts = new DefaultListModel<>();
 
-        AccountsTreeTableModel accountsModel = new AccountsTreeTableModel();
-
         TransactionsModel transactionsModel = new TransactionsModel();
+        AccountsTreeTableModel accountsModel = new AccountsTreeTableModel(transactionsModel);
+
         transactionsModel.appendTransaction(LocalDate.now(), "Opening Balance", new BigDecimal("100000"),
                 accountsModel.findAccount("Opening Balances"),
                 accountsModel.findAccount("Checking Account"));
         transactionsModel.appendTransaction(LocalDate.now(), "Opening Balance", new BigDecimal("500000"),
                 accountsModel.findAccount("Opening Balances"),
                 accountsModel.findAccount("Savings Account"));
-        transactionsModel.deleteTransaction(0);
 
-        add(new AccountTabs(accountsModel, openAccounts, accountSelection), CENTER);
+        add(new AccountTabs(accountsModel, transactionsModel, openAccounts, accountSelection), CENTER);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(new WindowMenu(openAccounts, accountSelection));
