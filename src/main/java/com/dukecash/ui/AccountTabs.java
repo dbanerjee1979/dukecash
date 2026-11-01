@@ -29,6 +29,7 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
 
             JTable table = new JTable(account.getTableModel());
             table.setDefaultRenderer(BigDecimal.class, new CurrencyCellRenderer());
+            table.setDefaultEditor(BigDecimal.class, new CurrencyCellEditor());
             add(new JScrollPane(table), tab);
 
             String accountName = account.getName();
@@ -75,4 +76,5 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
             }
         }
     }
+
 }

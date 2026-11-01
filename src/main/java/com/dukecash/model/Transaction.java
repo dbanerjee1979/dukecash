@@ -36,4 +36,12 @@ public class Transaction {
     public boolean hasAccount(Account account) {
         return splits.stream().anyMatch(split -> split.getAccount() == account);
     }
+
+    public void updateSplit(int splitIndex, BigDecimal amount, PaymentType paymentType) {
+        Split split = splits.get(splitIndex);
+        splits.set(splitIndex, new Split(this, split.getDescription(), split.getAccount(), amount, paymentType));
+        int otherIndex = 1 - splitIndex;
+        Split other = splits.get(otherIndex);
+        splits.set(otherIndex, new Split(this, other.getDescription(), other.getAccount(), amount, paymentType.opposite()));
+    }
 }

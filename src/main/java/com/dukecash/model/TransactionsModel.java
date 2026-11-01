@@ -41,6 +41,25 @@ public class TransactionsModel extends AbstractTableModel {
     }
 
     @Override
+    public Class<?> getColumnClass(int column) {
+        return switch (column) {
+            case COL_DATE -> LocalDate.class;
+            case COL_DESCRIPTION -> String.class;
+            case COL_ACCOUNT -> Account.class;
+            case COL_DEBIT, COL_CREDIT -> BigDecimal.class;
+            default -> Object.class;
+        };
+    }
+
+    @Override
+    public boolean isCellEditable(int row, int column) {
+        if (column == COL_CREDIT || column == COL_DEBIT) {
+            return !transactions.containsKey(row);
+        }
+        return false;
+    }
+
+    @Override
     public Object getValueAt(int row, int column) {
         Entry<Integer, Transaction> entry = transactions.floorEntry(row);
         if (entry == null) {
@@ -68,6 +87,24 @@ public class TransactionsModel extends AbstractTableModel {
             case COL_PAYMENT_TYPE -> split.getPaymentType();
             default -> null;
         };
+    }
+
+    @Override
+    public void setValueAt(Object value, int row, int column) {
+        Entry<Integer, Transaction> entry = transactions.floorEntry(row);
+        if (entry == null) {
+            throw new NoSuchElementException("No transaction at row " + row);
+        }
+
+        if (value instanceof BigDecimal amount) {
+            Transaction transaction = entry.getValue();
+            int s = row - entry.getKey() - 1;
+            transaction.updateSplit(s, amount, column == COL_CREDIT ? PaymentType.Credit : PaymentType.Debit);
+            for (int i = row; i < row + transaction.getSplitCount(); i++) {
+                fireTableCellUpdated(i, COL_DEBIT);
+                fireTableCellUpdated(i, COL_CREDIT);
+            }
+        }
     }
 
     public boolean isTransaction(Account account, int row) {
