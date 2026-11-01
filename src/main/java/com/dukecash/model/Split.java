@@ -36,4 +36,8 @@ public class Split {
     public BigDecimal getAmount() {
         return amount;
     }
+
+    public PaymentType getPaymentType() {
+        return paymentType;
+    }
 }

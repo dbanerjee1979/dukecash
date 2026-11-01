@@ -13,6 +13,7 @@ public class TransactionsModel extends AbstractTableModel {
     public static final int COL_DEBIT = 3;
     public static final int COL_CREDIT = 4;
     public static final int COL_AMOUNT = 5;
+    public static final int COL_PAYMENT_TYPE = 6;
 
     private final TreeMap<Integer, Transaction> transactions = new TreeMap<>();
     private int size;
@@ -64,6 +65,7 @@ public class TransactionsModel extends AbstractTableModel {
             case COL_DEBIT -> split.getDebit();
             case COL_CREDIT -> split.getCredit();
             case COL_AMOUNT -> split.getAmount();
+            case COL_PAYMENT_TYPE -> split.getPaymentType();
             default -> null;
         };
     }

@@ -2,8 +2,8 @@ package com.dukecash.model;
 
 import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
 import org.jdesktop.swingx.treetable.MutableTreeTableNode;
+import org.jdesktop.swingx.treetable.TreeTableNode;
 
-import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableModel;
 import javax.swing.tree.TreePath;
@@ -15,34 +15,36 @@ import java.util.NoSuchElementException;
 public class Account extends DefaultMutableTreeTableNode {
     private final String name;
     private final boolean placeholder;
+    private final PaymentType accountType;
     private FilterTableModel accountTableModel;
     private BigDecimal balance = BigDecimal.ZERO;
     private AccountsTreeTableModel accountsTreeTableModel;
 
     public static Account sampleAccounts(TransactionsModel transactionsModel) {
-        return new Account("Accounts", true,
-                transactionsModel, new Account("Assets", true,
-                transactionsModel, new Account("Current", true,
-                transactionsModel, new Account("Checking Account", false, transactionsModel),
-                                new Account("Savings Account", false, transactionsModel))),
-                new Account("Liabilities", true,
-                        transactionsModel, new Account("Credit Card", false, transactionsModel)),
-                new Account("Equity", true,
-                        transactionsModel, new Account("Opening Balances", false, transactionsModel)),
-                new Account("Income", true,
-                        transactionsModel, new Account("Salary", false, transactionsModel)),
-                new Account("Expenses", true,
-                        transactionsModel, new Account("Groceries", false, transactionsModel),
-                        new Account("Dining Out", false, transactionsModel),
-                        new Account("Entertainment", false, transactionsModel),
-                        new Account("Auto", true,
-                                transactionsModel, new Account("Gas", false, transactionsModel),
-                                new Account("Insurance", false, transactionsModel),
-                                new Account("Parking", false, transactionsModel))));
+        return new Account("Accounts", true, transactionsModel, null,
+                new Account("Assets", true, transactionsModel, PaymentType.Debit,
+                        new Account("Current", true, transactionsModel, PaymentType.Debit,
+                                new Account("Checking Account", false, transactionsModel, PaymentType.Debit),
+                                new Account("Savings Account", false, transactionsModel, PaymentType.Debit))),
+                new Account("Liabilities", true, transactionsModel, PaymentType.Credit,
+                        new Account("Credit Card", false, transactionsModel, PaymentType.Credit)),
+                new Account("Equity", true, transactionsModel, PaymentType.Credit,
+                        new Account("Opening Balances", false, transactionsModel, PaymentType.Credit)),
+                new Account("Income", true, transactionsModel, PaymentType.Credit,
+                        new Account("Salary", false, transactionsModel, PaymentType.Credit)),
+                new Account("Expenses", true, transactionsModel, PaymentType.Debit,
+                        new Account("Groceries", false, transactionsModel, PaymentType.Debit),
+                        new Account("Dining Out", false, transactionsModel, PaymentType.Debit),
+                        new Account("Entertainment", false, transactionsModel, PaymentType.Debit),
+                        new Account("Auto", true, transactionsModel, PaymentType.Debit,
+                                new Account("Gas", false, transactionsModel, PaymentType.Debit),
+                                new Account("Insurance", false, transactionsModel, PaymentType.Debit),
+                                new Account("Parking", false, transactionsModel, PaymentType.Debit))));
     }
 
-    public Account(String name, boolean placeholder, TransactionsModel transactionsModel, Account... children) {
+    public Account(String name, boolean placeholder, TransactionsModel transactionsModel, PaymentType accountType, Account... children) {
         this.placeholder = placeholder;
+        this.accountType = accountType;
         setUserObject(this);
         this.name = name;
         for (Account child : children) {
@@ -119,14 +121,44 @@ public class Account extends DefaultMutableTreeTableNode {
 
     private void updateBalance(TableModelEvent ev) {
         BigDecimal balance = BigDecimal.ZERO;
+
+        if (placeholder) {
+            for (MutableTreeTableNode child : children) {
+                balance = balance.add(((Account) child).getBalance());
+            }
+            if (!this.balance.equals(balance)) {
+                this.balance = balance;
+                accountsTreeTableModel.fireAccountBalanceChanged(this);
+            }
+            return;
+        }
+
         for (int row = 0; row < accountTableModel.getRowCount(); row++) {
+            BigDecimal amount = (BigDecimal) accountTableModel.getValueAt(row, TransactionsModel.COL_AMOUNT);
+            PaymentType paymentType = (PaymentType) accountTableModel.getValueAt(row, TransactionsModel.COL_PAYMENT_TYPE);
             if (accountTableModel.getValueAt(row, TransactionsModel.COL_ACCOUNT) == Account.this) {
-                balance = balance.add((BigDecimal) accountTableModel.getValueAt(row, TransactionsModel.COL_AMOUNT));
+                if (accountType == PaymentType.Debit) {
+                    if (paymentType == PaymentType.Debit) {
+                        balance = balance.add(amount);
+                    } else {
+                        balance = balance.subtract(amount);
+                    }
+                } else {
+                    if (paymentType == PaymentType.Credit) {
+                        balance = balance.add(amount);
+                    } else {
+                        balance = balance.subtract(amount);
+                    }
+                }
             }
         }
+
         if (!this.balance.equals(balance)) {
             this.balance = balance;
             accountsTreeTableModel.fireAccountBalanceChanged(this);
+            for (TreeTableNode parent = getParent(); parent != null; parent = parent.getParent()) {
+                ((Account) parent).updateBalance(ev);
+            }
         }
     }
 }
