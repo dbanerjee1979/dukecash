@@ -126,28 +126,23 @@ public class Account extends DefaultMutableTreeTableNode {
             for (MutableTreeTableNode child : children) {
                 balance = balance.add(((Account) child).getBalance());
             }
-            if (!this.balance.equals(balance)) {
-                this.balance = balance;
-                accountsTreeTableModel.fireAccountBalanceChanged(this);
-            }
-            return;
-        }
-
-        for (int row = 0; row < accountTableModel.getRowCount(); row++) {
-            BigDecimal amount = (BigDecimal) accountTableModel.getValueAt(row, TransactionsModel.COL_AMOUNT);
-            PaymentType paymentType = (PaymentType) accountTableModel.getValueAt(row, TransactionsModel.COL_PAYMENT_TYPE);
-            if (accountTableModel.getValueAt(row, TransactionsModel.COL_ACCOUNT) == Account.this) {
-                if (accountType == PaymentType.Debit) {
-                    if (paymentType == PaymentType.Debit) {
-                        balance = balance.add(amount);
+        } else {
+            for (int row = 0; row < accountTableModel.getRowCount(); row++) {
+                BigDecimal amount = (BigDecimal) accountTableModel.getValueAt(row, TransactionsModel.COL_AMOUNT);
+                PaymentType paymentType = (PaymentType) accountTableModel.getValueAt(row, TransactionsModel.COL_PAYMENT_TYPE);
+                if (accountTableModel.getValueAt(row, TransactionsModel.COL_ACCOUNT) == Account.this) {
+                    if (accountType == PaymentType.Debit) {
+                        if (paymentType == PaymentType.Debit) {
+                            balance = balance.add(amount);
+                        } else {
+                            balance = balance.subtract(amount);
+                        }
                     } else {
-                        balance = balance.subtract(amount);
-                    }
-                } else {
-                    if (paymentType == PaymentType.Credit) {
-                        balance = balance.add(amount);
-                    } else {
-                        balance = balance.subtract(amount);
+                        if (paymentType == PaymentType.Credit) {
+                            balance = balance.add(amount);
+                        } else {
+                            balance = balance.subtract(amount);
+                        }
                     }
                 }
             }
@@ -156,7 +151,8 @@ public class Account extends DefaultMutableTreeTableNode {
         if (!this.balance.equals(balance)) {
             this.balance = balance;
             accountsTreeTableModel.fireAccountBalanceChanged(this);
-            for (TreeTableNode parent = getParent(); parent != null; parent = parent.getParent()) {
+            TreeTableNode parent = getParent();
+            if (parent != null) {
                 ((Account) parent).updateBalance(ev);
             }
         }
