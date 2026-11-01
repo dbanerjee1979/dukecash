@@ -53,10 +53,11 @@ public class TransactionsModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int row, int column) {
-        if (column == COL_CREDIT || column == COL_DEBIT) {
-            return !transactions.containsKey(row);
-        }
-        return false;
+        return switch (column) {
+            case COL_DESCRIPTION -> true;
+            case COL_DEBIT, COL_CREDIT -> !transactions.containsKey(row);
+            default -> false;
+        };
     }
 
     @Override
@@ -95,15 +96,30 @@ public class TransactionsModel extends AbstractTableModel {
         if (entry == null) {
             throw new NoSuchElementException("No transaction at row " + row);
         }
+        Transaction transaction = entry.getValue();
 
-        if (value instanceof BigDecimal amount) {
-            Transaction transaction = entry.getValue();
-            int s = row - entry.getKey() - 1;
-            transaction.updateSplit(s, amount, column == COL_CREDIT ? PaymentType.Credit : PaymentType.Debit);
-            for (int i = row; i < row + transaction.getSplitCount(); i++) {
-                fireTableCellUpdated(i, COL_DEBIT);
-                fireTableCellUpdated(i, COL_CREDIT);
-            }
+        switch (column) {
+            case COL_DESCRIPTION:
+                if (value instanceof String description) {
+                    if (row == entry.getKey()) {
+                        transaction.setDescription(description);
+                    } else {
+                        int s = row - entry.getKey() - 1;
+                        transaction.updateSplitDescription(s, description);
+                    }
+                    fireTableCellUpdated(row, column);
+                }
+                break;
+            case COL_DEBIT, COL_CREDIT:
+                if (value instanceof BigDecimal amount) {
+                    int s = row - entry.getKey() - 1;
+                    transaction.updateSplitAmount(s, amount, column == COL_CREDIT ? PaymentType.Credit : PaymentType.Debit);
+                    for (int i = row; i < row + transaction.getSplitCount(); i++) {
+                        fireTableCellUpdated(i, COL_DEBIT);
+                        fireTableCellUpdated(i, COL_CREDIT);
+                    }
+                }
+                break;
         }
     }
 

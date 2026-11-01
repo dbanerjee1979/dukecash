@@ -33,15 +33,24 @@ public class Transaction {
         return description;
     }
 
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public boolean hasAccount(Account account) {
         return splits.stream().anyMatch(split -> split.getAccount() == account);
     }
 
-    public void updateSplit(int splitIndex, BigDecimal amount, PaymentType paymentType) {
+    public void updateSplitAmount(int splitIndex, BigDecimal amount, PaymentType paymentType) {
         Split split = splits.get(splitIndex);
         splits.set(splitIndex, new Split(this, split.getDescription(), split.getAccount(), amount, paymentType));
         int otherIndex = 1 - splitIndex;
         Split other = splits.get(otherIndex);
         splits.set(otherIndex, new Split(this, other.getDescription(), other.getAccount(), amount, paymentType.opposite()));
+    }
+
+    public void updateSplitDescription(int splitIndex, String description) {
+        Split split = splits.get(splitIndex);
+        splits.set(splitIndex, new Split(this, description, split.getAccount(), split.getAmount(), split.getPaymentType()));
     }
 }
