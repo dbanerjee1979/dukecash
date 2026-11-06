@@ -13,15 +13,12 @@ import static java.awt.event.KeyEvent.*;
 
 public class WindowMenu extends JMenu implements ListDataListener {
     private final int windowInsertIndex;
-    private final ButtonGroup accountButtonGroup;
     private final DefaultListModel<Account> openAccounts;
     private final ListSelectionModel accountSelection;
 
     public WindowMenu(DefaultListModel<Account> openAccounts, ListSelectionModel accountSelection) {
         super("Window");
         setMnemonic('W');
-
-        this.accountButtonGroup = new ButtonGroup();
 
         JMenuItem closeItem = new JMenuItem("Close");
         closeItem.setMnemonic('C');
@@ -38,7 +35,6 @@ public class WindowMenu extends JMenu implements ListDataListener {
         accountsItem.addActionListener(_ -> accountSelection.clearSelection());
         accountSelection.addListSelectionListener(_ -> accountsItem.setSelected(accountSelection.isSelectionEmpty()));
         add(accountsItem);
-        accountButtonGroup.add(accountsItem);
 
         this.windowInsertIndex = getItemCount();
         this.openAccounts = openAccounts;
@@ -66,8 +62,8 @@ public class WindowMenu extends JMenu implements ListDataListener {
             JRadioButtonMenuItem menuItem = new JRadioButtonMenuItem(account.getName());
             menuItem.addActionListener(_ -> accountSelection.addSelectionInterval(accountIdx, accountIdx));
             accountSelection.addListSelectionListener(_ -> menuItem.setSelected(!openAccounts.isEmpty() &&
-                    openAccounts.get(Math.min(Math.max(0, accountSelection.getMaxSelectionIndex()), openAccounts.size() - 1)) == account));
-            accountButtonGroup.add(menuItem);
+                    accountSelection.getMaxSelectionIndex() >= 0 &&
+                    openAccounts.get(accountSelection.getMaxSelectionIndex()) == account));
             add(menuItem, windowInsertIndex + i);
             if (i < 9) {
                 menuItem.setAccelerator(KeyStroke.getKeyStroke(VK_1 + i, CTRL_DOWN_MASK));
@@ -79,7 +75,6 @@ public class WindowMenu extends JMenu implements ListDataListener {
     public void intervalRemoved(ListDataEvent ev) {
         int wpos = ev.getIndex0() + windowInsertIndex;
         for (int i = ev.getIndex0(); i <= ev.getIndex1(); i++) {
-            accountButtonGroup.remove(getItem(wpos));
             remove(wpos);
         }
 
