@@ -76,5 +76,4 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
             }
         }
     }
-
 }
