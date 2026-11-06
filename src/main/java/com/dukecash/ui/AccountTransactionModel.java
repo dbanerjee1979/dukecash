@@ -118,7 +118,7 @@ public class AccountTransactionModel extends AbstractTableModel {
         }
         if (startRow != -1) {
             i.previous();
-            fireTableRowsDeleted(startRow, viewRow);
+            fireTableRowsDeleted(startRow, viewRow - 1);
         }
         return i;
     }
