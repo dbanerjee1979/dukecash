@@ -6,9 +6,6 @@ import com.dukecash.model2.TransactionsModel;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
 
 import static com.dukecash.model2.TransactionsModel.COL_ACCOUNT;
 
@@ -17,7 +14,8 @@ public class AccountTransactionModel extends AbstractTableModel {
 
     private final Account account;
     private final TransactionsModel transactionsModel;
-    private final List<Integer> viewToSourceMapping = new ArrayList<>();
+    private int[] viewToSourceMapping;
+    private int viewRowCount;
 
     public AccountTransactionModel(Account account, TransactionsModel transactionsModel) {
         this.account = account;
@@ -28,7 +26,7 @@ public class AccountTransactionModel extends AbstractTableModel {
 
     @Override
     public int getRowCount() {
-        return viewToSourceMapping.size();
+        return viewRowCount;
     }
 
     @Override
@@ -60,7 +58,7 @@ public class AccountTransactionModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int row, int column) {
-        int sourceRow = viewToSourceMapping.get(row);
+        int sourceRow = viewToSourceMapping[row];
         Account transfer;
         return switch (column) {
             case COL_ACCOUNT ->  (transfer = transactionsModel.findTransferAccount(sourceRow, account)) != null ? transfer : null;
@@ -70,27 +68,113 @@ public class AccountTransactionModel extends AbstractTableModel {
     }
 
     private void rebuild() {
-        viewToSourceMapping.clear();
+        viewToSourceMapping = new int[this.transactionsModel.getRowCount()];
+        viewRowCount = 0;
         for (int sourceRow = 0; sourceRow < this.transactionsModel.getRowCount(); sourceRow++) {
             if (transactionsModel.hasAccount(sourceRow, account)) {
-                viewToSourceMapping.add(sourceRow);
+                viewToSourceMapping[viewRowCount++] = sourceRow;
             }
         }
     }
 
     private void onSourceChanged(TableModelEvent ev) {
+        int delta = ev.getLastRow() - ev.getFirstRow() + 1;
+        int sourceRow;
+        int viewRow;
+        int updateStartRow = -1;
+        int updateEndRow = -1;
+        int[] build;
+        int buildRowCount = 0;
         switch (ev.getType()) {
             case TableModelEvent.DELETE:
-                removeAffectedRange(ev);
+                build = new int[viewRowCount];
+                for (viewRow = 0; viewRow < viewRowCount; viewRow++) {
+                    sourceRow = viewToSourceMapping[viewRow];
+                    // Before start of delete range - preserve
+                    if (sourceRow < ev.getFirstRow()) {
+                        build[buildRowCount++] = sourceRow;
+                    }
+                    // Within delete range - track view row range encompassing delete range
+                    else if (sourceRow <= ev.getLastRow()) {
+                        if (updateStartRow == -1) {
+                            updateStartRow = viewRow;
+                        }
+                        updateEndRow = viewRow;
+                    }
+                    // After end of delete range - shift by amount of source rows deleted
+                    else {
+                        build[buildRowCount++] = sourceRow - delta;
+                    }
+                }
+                if (updateStartRow != -1) {
+                    fireTableRowsDeleted(updateStartRow, updateEndRow);
+                }
+                viewToSourceMapping = build;
+                viewRowCount = buildRowCount;
                 return;
-            case TableModelEvent.INSERT, TableModelEvent.UPDATE:
+            case TableModelEvent.INSERT:
+                build = new int[viewRowCount + delta];
+                // Before start of add range, preserve
+                for (viewRow = 0; viewRow < viewRowCount && (sourceRow = viewToSourceMapping[viewRow]) < ev.getFirstRow(); viewRow++) {
+                    build[buildRowCount++] = sourceRow;
+                }
+
+                // Iterate add range, add transactions including the account to the account view
+                for (sourceRow = ev.getFirstRow(); sourceRow <= ev.getLastRow(); sourceRow++) {
+                    if (transactionsModel.hasAccount(sourceRow, account)) {
+                        if (updateStartRow == -1) {
+                            updateStartRow = viewRow;
+                        }
+                        updateEndRow = viewRow;
+                        build[buildRowCount++] = sourceRow;
+                    }
+                }
+
+                // After end of add range - shift by amount of source rows added
+                for (; viewRow < viewRowCount; viewRow++) {
+                    build[buildRowCount++] = sourceRow + delta;
+                }
+
+                if (updateStartRow != -1) {
+                    fireTableRowsInserted(updateStartRow, updateEndRow);
+                }
+                viewToSourceMapping = build;
+                viewRowCount = buildRowCount;
+                return;
+            case TableModelEvent.UPDATE:
+                // If update occurs outside of visible table area, it is a full update
                 if (isUpdateOutsideTableRange(ev)) {
                     break;
                 }
-                ListIterator<Integer> insertion = removeAffectedRange(ev);
-                insertToView(ev, insertion);
+
+                build = new int[viewRowCount];
+                for (viewRow = 0; viewRow < viewRowCount; viewRow++) {
+                    sourceRow = viewToSourceMapping[viewRow];
+                    // Before start of update range, preserve
+                    if (sourceRow < ev.getFirstRow()) {
+                        build[buildRowCount++] = sourceRow;
+                    }
+                    // After end of update range - shift by amount of rows that got filtered out
+                    else if (sourceRow > ev.getLastRow()) {
+                        build[buildRowCount++] = sourceRow - delta;
+                    }
+                    // Within update range - keep updated rows that still include account
+                    else if (transactionsModel.hasAccount(sourceRow, account)) {
+                        build[buildRowCount++] = sourceRow;
+                        // One less to filter out. If delta drops to zero, the update didn't affect filtering
+                        // If delta is nonzero, some rows got filtered out and will have to be accounted for
+                        delta--;
+                    }
+                    // Otherwise signal that the row has been filtered out
+                    else {
+                        fireTableRowsDeleted(viewRow, viewRow);
+                    }
+                }
+                viewToSourceMapping = build;
+                viewRowCount = buildRowCount;
                 return;
         }
+
         if (ev.getFirstRow() == TableModelEvent.HEADER_ROW) {
             fireTableStructureChanged();
         } else {
@@ -102,41 +186,5 @@ public class AccountTransactionModel extends AbstractTableModel {
         return ev.getType() == TableModelEvent.UPDATE
                 && ev.getColumn() >= transactionsModel.getColumnCount()
                 && (ev.getFirstRow() < 0 || ev.getFirstRow() >= transactionsModel.getRowCount());
-    }
-
-    private ListIterator<Integer> removeAffectedRange(TableModelEvent ev) {
-        ListIterator<Integer> i = viewToSourceMapping.listIterator();
-        int viewRow = -1;
-        int startRow = -1;
-        while (i.hasNext() && (viewRow = i.next()) <= ev.getLastRow()) {
-            if (viewRow >= ev.getFirstRow()) {
-                i.remove();
-                if (startRow == -1) {
-                    startRow = viewRow;
-                }
-            }
-        }
-        if (startRow != -1) {
-            i.previous();
-            fireTableRowsDeleted(startRow, viewRow - 1);
-        }
-        return i;
-    }
-
-    private void insertToView(TableModelEvent ev, ListIterator<Integer> insertion) {
-        int startRow = -1;
-        int viewRow = insertion.nextIndex();
-        for (int sourceIndex = ev.getFirstRow(); sourceIndex <= ev.getLastRow(); sourceIndex++) {
-            if (transactionsModel.hasAccount(sourceIndex, account)) {
-                insertion.add(sourceIndex);
-                if (startRow == -1) {
-                    startRow = viewRow;
-                }
-                viewRow++;
-            }
-        }
-        if (startRow != -1) {
-            fireTableRowsInserted(startRow, viewRow - 1);
-        }
     }
 }
