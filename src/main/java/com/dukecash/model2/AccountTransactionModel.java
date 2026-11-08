@@ -161,7 +161,6 @@ public class AccountTransactionModel extends AbstractTableModel {
                 }
 
                 build = new int[viewRowCount];
-                List<TableModelEvent> tableEvents = new ArrayList<>();
                 delta = 0;
                 for (viewRow = 0; viewRow < viewRowCount; viewRow++) {
                     sourceRow = viewToSourceMapping[viewRow];
@@ -175,20 +174,17 @@ public class AccountTransactionModel extends AbstractTableModel {
                     }
                     // Within update range - keep updated rows that still include account
                     else if (transactionsModel.hasAccount(sourceRow, account)) {
-                        tableEvents.add(new TableModelEvent(this, buildRowCount, buildRowCount, ev.getColumn()));
                         build[buildRowCount++] = sourceRow;
+                        fireTableCellUpdated(buildRowCount - 1, ev.getColumn());
                     }
                     // Otherwise signal that the row has been filtered out
                     else {
-                        tableEvents.add(new TableModelEvent(this, viewRow, viewRow, ALL_COLUMNS, DELETE));
+                        fireTableRowsDeleted(viewRow, viewRow);
                         delta++;
                     }
                 }
                 viewToSourceMapping = build;
                 viewRowCount = buildRowCount;
-                for (TableModelEvent cellUpdateEvent : tableEvents) {
-                    fireTableCellUpdated(cellUpdateEvent.getFirstRow(), cellUpdateEvent.getColumn());
-                }
                 return;
         }
 
