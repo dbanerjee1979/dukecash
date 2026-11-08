@@ -10,7 +10,7 @@ import java.util.List;
 
 public class Transaction {
     private final LocalDate date;
-    private final String description;
+    private String description;
     private final List<Split> splits = new ArrayList<>();
 
     public Transaction(LocalDate date, String description, Account from, Account to, BigDecimal amount,
@@ -27,6 +27,10 @@ public class Transaction {
 
     public String getDescription() {
         return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public boolean hasAccount(Account account) {

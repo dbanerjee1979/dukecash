@@ -1,13 +1,16 @@
-package com.dukecash.ui;
+package com.dukecash.model2;
 
 import com.dukecash.model.Account;
-import com.dukecash.model2.TransactionsModel;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.dukecash.model2.TransactionsModel.COL_ACCOUNT;
+import static javax.swing.event.TableModelEvent.ALL_COLUMNS;
+import static javax.swing.event.TableModelEvent.DELETE;
 
 public class AccountTransactionModel extends AbstractTableModel {
     private static final int COL_BALANCE = 5;
@@ -67,6 +70,16 @@ public class AccountTransactionModel extends AbstractTableModel {
         };
     }
 
+    @Override
+    public boolean isCellEditable(int row, int column) {
+        return transactionsModel.isCellEditable(viewToSourceMapping[row], column);
+    }
+
+    @Override
+    public void setValueAt(Object value, int row, int column) {
+        transactionsModel.setValueAt(value, viewToSourceMapping[row], column);
+    }
+
     private void rebuild() {
         viewToSourceMapping = new int[this.transactionsModel.getRowCount()];
         viewRowCount = 0;
@@ -86,7 +99,7 @@ public class AccountTransactionModel extends AbstractTableModel {
         int[] build;
         int buildRowCount = 0;
         switch (ev.getType()) {
-            case TableModelEvent.DELETE:
+            case DELETE:
                 build = new int[viewRowCount];
                 for (viewRow = 0; viewRow < viewRowCount; viewRow++) {
                     sourceRow = viewToSourceMapping[viewRow];
@@ -148,6 +161,8 @@ public class AccountTransactionModel extends AbstractTableModel {
                 }
 
                 build = new int[viewRowCount];
+                List<TableModelEvent> tableEvents = new ArrayList<>();
+                delta = 0;
                 for (viewRow = 0; viewRow < viewRowCount; viewRow++) {
                     sourceRow = viewToSourceMapping[viewRow];
                     // Before start of update range, preserve
@@ -160,18 +175,20 @@ public class AccountTransactionModel extends AbstractTableModel {
                     }
                     // Within update range - keep updated rows that still include account
                     else if (transactionsModel.hasAccount(sourceRow, account)) {
+                        tableEvents.add(new TableModelEvent(this, buildRowCount, buildRowCount, ev.getColumn()));
                         build[buildRowCount++] = sourceRow;
-                        // One less to filter out. If delta drops to zero, the update didn't affect filtering
-                        // If delta is nonzero, some rows got filtered out and will have to be accounted for
-                        delta--;
                     }
                     // Otherwise signal that the row has been filtered out
                     else {
-                        fireTableRowsDeleted(viewRow, viewRow);
+                        tableEvents.add(new TableModelEvent(this, viewRow, viewRow, ALL_COLUMNS, DELETE));
+                        delta++;
                     }
                 }
                 viewToSourceMapping = build;
                 viewRowCount = buildRowCount;
+                for (TableModelEvent cellUpdateEvent : tableEvents) {
+                    fireTableCellUpdated(cellUpdateEvent.getFirstRow(), cellUpdateEvent.getColumn());
+                }
                 return;
         }
 

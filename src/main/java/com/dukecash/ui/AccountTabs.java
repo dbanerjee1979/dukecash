@@ -2,6 +2,7 @@ package com.dukecash.ui;
 
 import com.dukecash.model.Account;
 import com.dukecash.model.AccountsTreeTableModel;
+import com.dukecash.model2.AccountTransactionModel;
 import com.dukecash.model2.TransactionsModel;
 
 import javax.swing.*;

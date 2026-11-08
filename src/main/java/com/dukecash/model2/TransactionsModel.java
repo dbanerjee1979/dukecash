@@ -76,6 +76,25 @@ public class TransactionsModel extends AbstractTableModel {
         };
     }
 
+    @Override
+    public boolean isCellEditable(int row, int column) {
+        return switch (column) {
+            case COL_DESCRIPTION -> true;
+            default -> false;
+        };
+    }
+
+    @Override
+    public void setValueAt(Object value, int row, int column) {
+        Transaction transaction = transactions.get(row);
+        switch (column) {
+            case COL_DESCRIPTION:
+                transaction.setDescription((String) value);
+                fireTableCellUpdated(row, column);
+                break;
+        }
+    }
+
     public boolean hasAccount(int row, Account account) {
         return transactions.get(row).hasAccount(account);
     }
