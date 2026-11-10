@@ -102,4 +102,9 @@ public class TransactionsModel extends AbstractTableModel {
     public Account findTransferAccount(int row, Account account) {
         return hasAccount(row, account) ? transactions.get(row).findTransferAccount(account) : null;
     }
+
+    public void updateToAccount(int row, Account fromAccount, Account toAccount) {
+        transactions.get(row).updateAccount(fromAccount, toAccount);
+        fireTableCellUpdated(row, COL_ACCOUNT);
+    }
 }

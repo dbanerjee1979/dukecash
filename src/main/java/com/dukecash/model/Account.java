@@ -8,9 +8,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableModel;
 import javax.swing.tree.TreePath;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class Account extends DefaultMutableTreeTableNode {
     private final String name;
@@ -156,5 +154,16 @@ public class Account extends DefaultMutableTreeTableNode {
                 ((Account) parent).updateBalance(ev);
             }
         }
+    }
+
+    public Set<Account> findAllAccounts() {
+        if (getChildCount() == 0) {
+            return Set.of(this);
+        }
+        TreeSet<Account> accounts = new TreeSet<>(Comparator.comparing(Account::getName));
+        for (int i = 0; i < getChildCount(); i++) {
+            accounts.addAll(((Account) getChildAt(i)).findAllAccounts());
+        }
+        return accounts;
     }
 }

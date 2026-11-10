@@ -47,4 +47,15 @@ public class Transaction {
         }
         return null;
     }
+
+    public void updateAccount(Account fromAccount, Account toAccount) {
+        if (splits.size() == 2) {
+            for (Split split : splits) {
+                if (split.getAccount() != fromAccount) {
+                    split.setAccount(toAccount);
+                    return;
+                }
+            }
+        }
+    }
 }

@@ -5,11 +5,8 @@ import com.dukecash.model.Account;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.dukecash.model2.TransactionsModel.COL_ACCOUNT;
-import static javax.swing.event.TableModelEvent.ALL_COLUMNS;
 import static javax.swing.event.TableModelEvent.DELETE;
 
 public class AccountTransactionModel extends AbstractTableModel {
@@ -72,12 +69,19 @@ public class AccountTransactionModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int row, int column) {
+        if (column == COL_ACCOUNT) {
+            return true;
+        }
         return transactionsModel.isCellEditable(viewToSourceMapping[row], column);
     }
 
     @Override
     public void setValueAt(Object value, int row, int column) {
-        transactionsModel.setValueAt(value, viewToSourceMapping[row], column);
+        int sourceRow = viewToSourceMapping[row];
+        if (column == COL_ACCOUNT) {
+            transactionsModel.updateToAccount(sourceRow, account, (Account) value);
+        }
+        transactionsModel.setValueAt(value, sourceRow, column);
     }
 
     private void rebuild() {
@@ -160,8 +164,9 @@ public class AccountTransactionModel extends AbstractTableModel {
                     break;
                 }
 
-                build = new int[viewRowCount];
+                build = new int[viewRowCount + 1];
                 delta = 0;
+                boolean found = false;
                 for (viewRow = 0; viewRow < viewRowCount; viewRow++) {
                     sourceRow = viewToSourceMapping[viewRow];
                     // Before start of update range, preserve
@@ -176,13 +181,31 @@ public class AccountTransactionModel extends AbstractTableModel {
                     else if (transactionsModel.hasAccount(sourceRow, account)) {
                         build[buildRowCount++] = sourceRow;
                         fireTableCellUpdated(buildRowCount - 1, ev.getColumn());
+                        found = true;
                     }
                     // Otherwise signal that the row has been filtered out
                     else {
                         fireTableRowsDeleted(viewRow, viewRow);
                         delta++;
+                        found = true;
                     }
                 }
+                if (!found) {
+                    for (viewRow = 0; viewRow < buildRowCount; viewRow++) {
+                        if (ev.getFirstRow() < build[viewRow]) {
+                            System.arraycopy(build, viewRow, build, viewRow + 1, buildRowCount - viewRow);
+                            build[viewRow] = ev.getFirstRow();
+                            fireTableRowsInserted(viewRow, viewRow);
+                            break;
+                        }
+                    }
+                    if (viewRow == buildRowCount) {
+                        build[viewRow] = ev.getFirstRow();
+                        fireTableRowsInserted(viewRow, viewRow);
+                    }
+                    buildRowCount++;
+                }
+
                 viewToSourceMapping = build;
                 viewRowCount = buildRowCount;
                 return;

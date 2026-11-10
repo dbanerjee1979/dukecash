@@ -10,12 +10,14 @@ import javax.swing.event.*;
 import java.math.BigDecimal;
 
 public class AccountTabs extends JTabbedPane implements ListDataListener, ListSelectionListener {
+    private final AccountsTreeTableModel accountsModel;
     private final DefaultListModel<Account> openAccounts;
     private final ListSelectionModel accountSelection;
     private final TransactionsModel transactionsModel;
 
     public AccountTabs(AccountsTreeTableModel accountsModel, DefaultListModel<Account> openAccounts,
                        ListSelectionModel accountSelection) {
+        this.accountsModel = accountsModel;
         this.openAccounts = openAccounts;
         this.accountSelection = accountSelection;
         add("Accounts", new AccountsPanel(accountsModel, openAccounts, accountSelection));
@@ -35,6 +37,8 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
             JTable table = new JTable(new AccountTransactionModel(account, transactionsModel));
             table.setDefaultRenderer(BigDecimal.class, new CurrencyCellRenderer());
             table.setDefaultEditor(BigDecimal.class, new CurrencyCellEditor());
+            table.setDefaultRenderer(Account.class, new AccountCellRenderer());
+            table.setDefaultEditor(Account.class, new AccountCellEditor(account, accountsModel));
             add(new JScrollPane(table), tab);
 
             String accountName = account.getName();
