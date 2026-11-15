@@ -5,7 +5,6 @@ import org.jdesktop.swingx.treetable.MutableTreeTableNode;
 import org.jdesktop.swingx.treetable.TreeTableNode;
 
 import javax.swing.event.TableModelEvent;
-import javax.swing.table.TableModel;
 import javax.swing.tree.TreePath;
 import java.math.BigDecimal;
 import java.util.*;
@@ -14,7 +13,7 @@ public class Account extends DefaultMutableTreeTableNode {
     private final String name;
     private final boolean placeholder;
     private final PaymentType accountType;
-    private FilterTableModel accountTableModel;
+    private AccountTransactionModel accountTableModel;
     private BigDecimal balance = BigDecimal.ZERO;
     private AccountsTreeTableModel accountsTreeTableModel;
 
@@ -50,8 +49,7 @@ public class Account extends DefaultMutableTreeTableNode {
         }
 
         if (!this.placeholder) {
-            this.accountTableModel = new FilterTableModel(transactionsModel,
-                    row -> transactionsModel.isTransaction(Account.this, row));
+            this.accountTableModel = new AccountTransactionModel(this, transactionsModel);
             this.accountTableModel.addTableModelListener(this::updateBalance);
         }
     }
@@ -91,13 +89,6 @@ public class Account extends DefaultMutableTreeTableNode {
         return null;
     }
 
-    public TableModel getTableModel() {
-        if (placeholder) {
-            throw new IllegalStateException("Attempted to get row sorter on placeholder account");
-        }
-        return accountTableModel;
-    }
-
     public BigDecimal getBalance() {
         return balance;
     }
@@ -126,21 +117,19 @@ public class Account extends DefaultMutableTreeTableNode {
             }
         } else {
             for (int row = 0; row < accountTableModel.getRowCount(); row++) {
-                BigDecimal amount = (BigDecimal) accountTableModel.getValueAt(row, TransactionsModel.COL_AMOUNT);
-                PaymentType paymentType = (PaymentType) accountTableModel.getValueAt(row, TransactionsModel.COL_PAYMENT_TYPE);
-                if (accountTableModel.getValueAt(row, TransactionsModel.COL_ACCOUNT) == Account.this) {
-                    if (accountType == PaymentType.Debit) {
-                        if (paymentType == PaymentType.Debit) {
-                            balance = balance.add(amount);
-                        } else {
-                            balance = balance.subtract(amount);
-                        }
+                BigDecimal amount = (BigDecimal) accountTableModel.getValueAt(row, AccountTransactionModel.COL_AMOUNT);
+                PaymentType paymentType = (PaymentType) accountTableModel.getValueAt(row, AccountTransactionModel.COL_PAYMENT_TYPE);
+                if (accountType == PaymentType.Debit) {
+                    if (paymentType == PaymentType.Debit) {
+                        balance = balance.add(amount);
                     } else {
-                        if (paymentType == PaymentType.Credit) {
-                            balance = balance.add(amount);
-                        } else {
-                            balance = balance.subtract(amount);
-                        }
+                        balance = balance.subtract(amount);
+                    }
+                } else {
+                    if (paymentType == PaymentType.Credit) {
+                        balance = balance.add(amount);
+                    } else {
+                        balance = balance.subtract(amount);
                     }
                 }
             }

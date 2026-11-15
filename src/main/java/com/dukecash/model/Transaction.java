@@ -6,23 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Transaction {
-    private LocalDate date;
+    private final LocalDate date;
     private String description;
-    private List<Split> splits = new ArrayList<>();
+    private final List<Split> splits = new ArrayList<>();
 
-    public Transaction(LocalDate date, String description, BigDecimal amount, Account from, Account to) {
+    public Transaction(LocalDate date, String description, Account from, Account to, BigDecimal amount,
+                       PaymentType paymentType) {
         this.date = date;
         this.description = description;
-        this.splits.add(new Split(this, description, from, amount, PaymentType.Credit));
-        this.splits.add(new Split(this, description, to, amount, PaymentType.Debit));
-    }
-
-    public Split getSplit(int s) {
-        return splits.get(s);
-    }
-
-    public int getSplitCount() {
-        return splits.size();
+        this.splits.add(new Split(this, description, to, amount, paymentType));
+        this.splits.add(new Split(this, description, from, amount, paymentType.opposite()));
     }
 
     public LocalDate getDate() {
@@ -41,16 +34,40 @@ public class Transaction {
         return splits.stream().anyMatch(split -> split.getAccount() == account);
     }
 
-    public void updateSplitAmount(int splitIndex, BigDecimal amount, PaymentType paymentType) {
-        Split split = splits.get(splitIndex);
-        splits.set(splitIndex, new Split(this, split.getDescription(), split.getAccount(), amount, paymentType));
-        int otherIndex = 1 - splitIndex;
-        Split other = splits.get(otherIndex);
-        splits.set(otherIndex, new Split(this, other.getDescription(), other.getAccount(), amount, paymentType.opposite()));
+    public Account findTransferAccount(Account from) {
+        if (splits.size() == 2) {
+            for (Split split : splits) {
+                if (split.getAccount() != from) {
+                    return split.getAccount();
+                }
+            }
+        }
+        return null;
     }
 
-    public void updateSplitDescription(int splitIndex, String description) {
-        Split split = splits.get(splitIndex);
-        splits.set(splitIndex, new Split(this, description, split.getAccount(), split.getAmount(), split.getPaymentType()));
+    public void updateAccount(Account fromAccount, Account toAccount) {
+        if (splits.size() == 2) {
+            for (Split split : splits) {
+                if (split.getAccount() != fromAccount) {
+                    split.setAccount(toAccount);
+                    return;
+                }
+            }
+        }
+    }
+
+    public BigDecimal findAmountForAccount(Account account) {
+        return findAccount(account).getAmount();
+    }
+
+    public PaymentType findPaymentTypeForAccount(Account account) {
+        return findAccount(account).getPaymentType();
+    }
+
+    private Split findAccount(Account account) {
+        return splits.stream()
+                .filter(split -> split.getAccount() == account)
+                .findFirst()
+                .orElseThrow();
     }
 }

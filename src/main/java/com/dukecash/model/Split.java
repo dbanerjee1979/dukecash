@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public class Split {
     private final Transaction transaction;
     private final String description;
-    private final Account account;
+    private Account account;
     private final BigDecimal amount;
     private final PaymentType paymentType;
 
@@ -17,20 +17,12 @@ public class Split {
         this.paymentType = paymentType;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public Account getAccount() {
         return account;
     }
 
-    public BigDecimal getDebit() {
-        return paymentType == PaymentType.Debit ? amount : null;
-    }
-
-    public BigDecimal getCredit() {
-        return paymentType == PaymentType.Credit ? amount : null;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     public BigDecimal getAmount() {

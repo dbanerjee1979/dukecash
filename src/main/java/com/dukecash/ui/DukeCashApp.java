@@ -6,9 +6,6 @@ import com.dukecash.model.TransactionsModel;
 
 import javax.swing.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-
 import static java.awt.BorderLayout.CENTER;
 import static java.awt.BorderLayout.NORTH;
 import static javax.swing.ListSelectionModel.SINGLE_SELECTION;
@@ -25,15 +22,9 @@ public class DukeCashApp extends JFrame {
 
         TransactionsModel transactionsModel = new TransactionsModel();
         AccountsTreeTableModel accountsModel = new AccountsTreeTableModel(transactionsModel);
+        transactionsModel.sampleTransactions(accountsModel);
 
-        transactionsModel.appendTransaction(LocalDate.now(), "Opening Balance", new BigDecimal("100000"),
-                accountsModel.findAccount("Opening Balances"),
-                accountsModel.findAccount("Checking Account"));
-        transactionsModel.appendTransaction(LocalDate.now(), "Opening Balance", new BigDecimal("500000"),
-                accountsModel.findAccount("Opening Balances"),
-                accountsModel.findAccount("Savings Account"));
-
-        add(new AccountTabs(accountsModel, openAccounts, accountSelection), CENTER);
+        add(new AccountTabs(accountsModel, transactionsModel, openAccounts, accountSelection), CENTER);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(new WindowMenu(openAccounts, accountSelection));

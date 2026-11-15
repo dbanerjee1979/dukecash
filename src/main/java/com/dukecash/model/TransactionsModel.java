@@ -3,8 +3,8 @@ package com.dukecash.model;
 import javax.swing.table.AbstractTableModel;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TransactionsModel extends AbstractTableModel {
     public static final int COL_DATE = 0;
@@ -12,15 +12,29 @@ public class TransactionsModel extends AbstractTableModel {
     public static final int COL_ACCOUNT = 2;
     public static final int COL_DEBIT = 3;
     public static final int COL_CREDIT = 4;
-    public static final int COL_AMOUNT = 5;
-    public static final int COL_PAYMENT_TYPE = 6;
+    public static final int COL_TRANSACTION = 5;
 
-    private final TreeMap<Integer, Transaction> transactions = new TreeMap<>();
-    private int size;
+    private final List<Transaction> transactions = new ArrayList<>();
+
+    public void sampleTransactions(AccountsTreeTableModel accountsModel) {
+        transactions.add(new Transaction(LocalDate.now(), "Opening Balance",
+                accountsModel.findAccount("Opening Balances"),
+                accountsModel.findAccount("Checking Account"),
+                new BigDecimal("10000.00"),
+                PaymentType.Debit));
+
+        transactions.add(new Transaction(LocalDate.now(), "Opening Balance",
+                accountsModel.findAccount("Opening Balances"),
+                accountsModel.findAccount("Savings Account"),
+                new BigDecimal("50000.00"),
+                PaymentType.Debit));
+
+        fireTableRowsInserted(0, 1);
+    }
 
     @Override
     public int getRowCount() {
-        return size;
+        return transactions.size();
     }
 
     @Override
@@ -33,7 +47,7 @@ public class TransactionsModel extends AbstractTableModel {
         return switch (column) {
             case COL_DATE -> "Date";
             case COL_DESCRIPTION -> "Description";
-            case COL_ACCOUNT ->  "Account";
+            case COL_ACCOUNT -> "Transfer";
             case COL_DEBIT -> "Debit";
             case COL_CREDIT -> "Credit";
             default -> "";
@@ -52,114 +66,45 @@ public class TransactionsModel extends AbstractTableModel {
     }
 
     @Override
-    public boolean isCellEditable(int row, int column) {
-        return switch (column) {
-            case COL_DESCRIPTION -> true;
-            case COL_DEBIT, COL_CREDIT -> !transactions.containsKey(row);
-            default -> false;
-        };
-    }
-
-    @Override
     public Object getValueAt(int row, int column) {
-        Entry<Integer, Transaction> entry = transactions.floorEntry(row);
-        if (entry == null) {
-            throw new NoSuchElementException("No transaction at row " + row);
-        }
-
-        int i = entry.getKey();
-        Transaction transaction = entry.getValue();
-        if (i == row) {
-            return switch (column) {
-                case COL_DATE -> transaction.getDate();
-                case COL_DESCRIPTION -> transaction.getDescription();
-                default -> null;
-            };
-        }
-
-        int s = row - i - 1;
-        Split split = transaction.getSplit(s);
+        Transaction transaction = transactions.get(row);
         return switch (column) {
-            case COL_DESCRIPTION -> split.getDescription();
-            case COL_ACCOUNT -> split.getAccount();
-            case COL_DEBIT -> split.getDebit();
-            case COL_CREDIT -> split.getCredit();
-            case COL_AMOUNT -> split.getAmount();
-            case COL_PAYMENT_TYPE -> split.getPaymentType();
+            case COL_DATE -> transaction.getDate();
+            case COL_DESCRIPTION -> transaction.getDescription();
+            case COL_TRANSACTION -> transaction;
             default -> null;
         };
     }
 
     @Override
-    public void setValueAt(Object value, int row, int column) {
-        Entry<Integer, Transaction> entry = transactions.floorEntry(row);
-        if (entry == null) {
-            throw new NoSuchElementException("No transaction at row " + row);
-        }
-        Transaction transaction = entry.getValue();
+    public boolean isCellEditable(int row, int column) {
+        return switch (column) {
+            case COL_DESCRIPTION -> true;
+            default -> false;
+        };
+    }
 
+    @Override
+    public void setValueAt(Object value, int row, int column) {
+        Transaction transaction = transactions.get(row);
         switch (column) {
             case COL_DESCRIPTION:
-                if (value instanceof String description) {
-                    if (row == entry.getKey()) {
-                        transaction.setDescription(description);
-                    } else {
-                        int s = row - entry.getKey() - 1;
-                        transaction.updateSplitDescription(s, description);
-                    }
-                    fireTableCellUpdated(row, column);
-                }
-                break;
-            case COL_DEBIT, COL_CREDIT:
-                if (value instanceof BigDecimal amount) {
-                    int s = row - entry.getKey() - 1;
-                    transaction.updateSplitAmount(s, amount, column == COL_CREDIT ? PaymentType.Credit : PaymentType.Debit);
-                    for (int i = row; i < row + transaction.getSplitCount(); i++) {
-                        fireTableCellUpdated(i, COL_DEBIT);
-                        fireTableCellUpdated(i, COL_CREDIT);
-                    }
-                }
+                transaction.setDescription((String) value);
+                fireTableCellUpdated(row, column);
                 break;
         }
     }
 
-    public boolean isTransaction(Account account, int row) {
-        Entry<Integer, Transaction> entry = transactions.floorEntry(row);
-        if (entry == null) {
-            throw new NoSuchElementException("No transaction at row " + row);
-        }
-        return entry.getValue().hasAccount(account);
+    public boolean hasAccount(int row, Account account) {
+        return transactions.get(row).hasAccount(account);
     }
 
-    public void appendTransaction(LocalDate date, String description, BigDecimal amount, Account from, Account to) {
-        int start = this.size;
-        Transaction transaction = new Transaction(date, description, amount, from, to);
-        transactions.put(start, transaction);
-        this.size += 1 + transaction.getSplitCount();
-        fireTableRowsInserted(start, this.size - 1);
+    public Account findTransferAccount(int row, Account account) {
+        return hasAccount(row, account) ? transactions.get(row).findTransferAccount(account) : null;
     }
 
-    public void deleteTransaction(int row) {
-        SortedMap<Integer, Transaction> tailMap = transactions.tailMap(row);
-
-        Iterator<Entry<Integer, Transaction>> it = tailMap.entrySet().iterator();
-        if (!it.hasNext()) {
-            throw new NoSuchElementException("No transaction at row " + row);
-        }
-
-        Entry<Integer, Transaction> entry = it.next();
-        int start = entry.getKey();
-        Transaction deleted = entry.getValue();
-        it.remove();
-        this.size -= 1 + deleted.getSplitCount();
-
-        int n = start;
-        for (Integer oldIndex : new ArrayList<>(tailMap.keySet())) {
-            Transaction transaction = tailMap.remove(oldIndex);
-            tailMap.put(n, transaction);
-            n += transaction.getSplitCount();
-        }
-
-        fireTableRowsDeleted(start, start + deleted.getSplitCount());
+    public void updateToAccount(int row, Account fromAccount, Account toAccount) {
+        transactions.get(row).updateAccount(fromAccount, toAccount);
+        fireTableCellUpdated(row, COL_ACCOUNT);
     }
 }

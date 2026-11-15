@@ -1,6 +1,4 @@
-package com.dukecash.model2;
-
-import com.dukecash.model.Account;
+package com.dukecash.model;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
@@ -9,11 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.dukecash.model2.TransactionsModel.COL_ACCOUNT;
+import static com.dukecash.model.TransactionsModel.COL_ACCOUNT;
 import static javax.swing.event.TableModelEvent.DELETE;
 
 public class AccountTransactionModel extends AbstractTableModel {
     private static final int COL_BALANCE = 5;
+    public static final int COL_AMOUNT = 6;
+    public static final int COL_PAYMENT_TYPE = 7;
 
     private final Account account;
     private final TransactionsModel transactionsModel;
@@ -61,10 +61,13 @@ public class AccountTransactionModel extends AbstractTableModel {
     @Override
     public Object getValueAt(int row, int column) {
         int sourceRow = viewToSourceMapping.get(row);
-        Account transfer;
+        Account transfer = transactionsModel.findTransferAccount(sourceRow, account);
+        Transaction transaction = (Transaction) transactionsModel.getValueAt(sourceRow, TransactionsModel.COL_TRANSACTION);
         return switch (column) {
-            case COL_ACCOUNT ->  (transfer = transactionsModel.findTransferAccount(sourceRow, account)) != null ? transfer : null;
+            case COL_ACCOUNT -> transfer;
             case COL_BALANCE -> BigDecimal.ZERO;
+            case COL_AMOUNT -> transaction.findAmountForAccount(account);
+            case COL_PAYMENT_TYPE -> transaction.findPaymentTypeForAccount(account);
             default ->  transactionsModel.getValueAt(sourceRow, column);
         };
     }
