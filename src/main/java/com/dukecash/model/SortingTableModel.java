@@ -5,6 +5,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.TreeMap;
 
 import static javax.swing.event.TableModelEvent.DELETE;
@@ -71,10 +72,10 @@ public class SortingTableModel extends AbstractTableModel {
     private void onSourceChanged(TableModelEvent ev) {
         switch (ev.getType()) {
             case DELETE:
-//                handleSourceRowsDeleted(ev);
+                handleSourceRowsDeleted(ev);
                 return;
             case TableModelEvent.INSERT:
-//                handleSourceRowsInserted(ev);
+                handleSourceRowsInserted(ev);
                 return;
             case TableModelEvent.UPDATE:
                 if (handleUpdateSourceRow(ev)) {
@@ -91,9 +92,52 @@ public class SortingTableModel extends AbstractTableModel {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
+    private void handleSourceRowsDeleted(TableModelEvent ev) {
+        int delta = ev.getLastRow() - ev.getFirstRow() + 1;
+        int viewRow = 0;
+        for (ListIterator<Integer> i = viewToSourceMapping.listIterator(); i.hasNext(); viewRow++) {
+            Integer sourceRow = i.next();
+            if (sourceRow >= ev.getFirstRow() && sourceRow <= ev.getLastRow()) {
+                i.remove();
+                fireTableRowsDeleted(viewRow, viewRow);
+            } else if (sourceRow > ev.getLastRow()) {
+                i.set(sourceRow - delta);
+            }
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void handleSourceRowsInserted(TableModelEvent ev) {
+        // Adjust source row indexes after insertion point
+        int delta = ev.getLastRow() - ev.getFirstRow() + 1;
+        for (ListIterator<Integer> i = viewToSourceMapping.listIterator(); i.hasNext(); ) {
+            Integer sourceRow = i.next();
+            if (sourceRow > ev.getLastRow()) {
+                i.set(sourceRow + delta);
+            }
+        }
+
+        // Find spots to insert source rows into their sorted positions
+        for (int sourceRow = ev.getFirstRow(); sourceRow <= ev.getLastRow(); sourceRow++) {
+            Comparable sourceValue = (Comparable) this.source.getValueAt(sourceRow, sortColumn);
+            int viewRow;
+            for (viewRow = 0; viewRow < viewToSourceMapping.size()
+                    && ((Comparable) getValueAt(viewRow, sortColumn)).compareTo(sourceValue) <= 0; viewRow++) {
+            }
+            viewToSourceMapping.add(viewRow, sourceRow);
+            fireTableRowsInserted(viewRow, viewRow);
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean handleUpdateSourceRow(TableModelEvent ev) {
         if (isUpdateOutsideTableRange(ev)) {
             return false;
+        }
+
+        // Sorting unaffected if the change didn't happen in the cell in the sorting column
+        if (ev.getColumn() != sortColumn || ev.getColumn() != TableModelEvent.ALL_COLUMNS) {
+            return true;
         }
 
         int currentViewRow = viewToSourceMapping.indexOf(ev.getFirstRow());

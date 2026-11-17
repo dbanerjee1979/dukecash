@@ -137,6 +137,7 @@ public class AccountTransactionModel extends AbstractTableModel {
         int deleteEnd = -1;
         while (viewRowIterator.hasNext() && viewRowIterator.next() <= ev.getLastRow()) {
             deleteEnd = viewRowIterator.previousIndex();
+            viewRowIterator.remove();
         }
 
         if (deleteStart != -1) {
