@@ -108,10 +108,12 @@ public class AccountTransactionModel extends AbstractTableModel {
                 handleSourceRowsInserted(ev);
                 return;
             case TableModelEvent.UPDATE:
-                handleUpdateSourceRow(ev);
-                return;
+                if (handleUpdateSourceRow(ev)) {
+                    return;
+                }
         }
 
+        rebuild();
         if (ev.getFirstRow() == TableModelEvent.HEADER_ROW) {
             fireTableStructureChanged();
         } else {
@@ -171,10 +173,10 @@ public class AccountTransactionModel extends AbstractTableModel {
         }
     }
 
-    private void handleUpdateSourceRow(TableModelEvent ev) {
+    private boolean handleUpdateSourceRow(TableModelEvent ev) {
         // If update occurs outside of visible table area, it is a full update
         if (isUpdateOutsideTableRange(ev)) {
-            return;
+            return false;
         }
 
         ListIterator<Integer> viewRowIterator = viewToSourceMapping.listIterator();
@@ -201,6 +203,7 @@ public class AccountTransactionModel extends AbstractTableModel {
                 viewIndex++;
             }
         }
+        return true;
     }
 
     private boolean isUpdateOutsideTableRange(TableModelEvent ev) {
