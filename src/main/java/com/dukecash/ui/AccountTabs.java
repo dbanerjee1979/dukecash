@@ -31,7 +31,7 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
             int tab = i + 1;
             Account account = openAccounts.get(i);
 
-            JTable table = new JTable(new SortModel(new AccountTransactionModel(account, transactionsModel),
+            JTable table = new JTable(new SortingTableModel(new AccountTransactionModel(account, transactionsModel),
                     TransactionsModel.COL_DATE));
             table.setDefaultRenderer(BigDecimal.class, new CurrencyCellRenderer());
             table.setDefaultEditor(BigDecimal.class, new CurrencyCellEditor());

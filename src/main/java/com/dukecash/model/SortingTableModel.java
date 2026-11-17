@@ -9,12 +9,12 @@ import java.util.TreeMap;
 
 import static javax.swing.event.TableModelEvent.DELETE;
 
-public class SortModel extends AbstractTableModel {
+public class SortingTableModel extends AbstractTableModel {
     private final TableModel source;
     private final int sortColumn;
-    private List<Integer> viewToSourceMapping = new ArrayList<>();
+    private final List<Integer> viewToSourceMapping = new ArrayList<>();
 
-    public SortModel(TableModel source, int sortColumn) {
+    public SortingTableModel(TableModel source, int sortColumn) {
         this.source = source;
         this.sortColumn = sortColumn;
         rebuild();
