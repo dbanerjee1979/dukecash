@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class TransactionsModel extends AbstractTableModel {
     public static final int COL_DATE = 0;
@@ -79,7 +80,7 @@ public class TransactionsModel extends AbstractTableModel {
     @Override
     public boolean isCellEditable(int row, int column) {
         return switch (column) {
-            case COL_DESCRIPTION -> true;
+            case COL_DATE, COL_DESCRIPTION -> true;
             default -> false;
         };
     }
@@ -88,9 +89,17 @@ public class TransactionsModel extends AbstractTableModel {
     public void setValueAt(Object value, int row, int column) {
         Transaction transaction = transactions.get(row);
         switch (column) {
+            case COL_DATE:
+                if (!Objects.equals(transaction.getDate(), value)) {
+                    transaction.setDate((LocalDate) value);
+                    fireTableCellUpdated(row, column);
+                }
+                break;
             case COL_DESCRIPTION:
-                transaction.setDescription((String) value);
-                fireTableCellUpdated(row, column);
+                if (!Objects.equals(transaction.getDescription(), value)) {
+                    transaction.setDescription((String) value);
+                    fireTableCellUpdated(row, column);
+                }
                 break;
         }
     }
@@ -104,7 +113,8 @@ public class TransactionsModel extends AbstractTableModel {
     }
 
     public void updateToAccount(int row, Account fromAccount, Account toAccount) {
-        transactions.get(row).updateAccount(fromAccount, toAccount);
-        fireTableCellUpdated(row, COL_ACCOUNT);
+        if (transactions.get(row).updateAccount(fromAccount, toAccount)) {
+            fireTableCellUpdated(row, COL_ACCOUNT);
+        }
     }
 }

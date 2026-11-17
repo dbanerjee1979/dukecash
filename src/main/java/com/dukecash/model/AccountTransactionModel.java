@@ -85,8 +85,9 @@ public class AccountTransactionModel extends AbstractTableModel {
         int sourceRow = viewToSourceMapping.get(row);
         if (column == COL_ACCOUNT) {
             transactionsModel.updateToAccount(sourceRow, account, (Account) value);
+        } else {
+            transactionsModel.setValueAt(value, sourceRow, column);
         }
-        transactionsModel.setValueAt(value, sourceRow, column);
     }
 
     private void rebuild() {

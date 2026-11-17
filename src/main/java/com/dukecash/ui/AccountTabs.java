@@ -8,6 +8,7 @@ import com.dukecash.model.TransactionsModel;
 import javax.swing.*;
 import javax.swing.event.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class AccountTabs extends JTabbedPane implements ListDataListener, ListSelectionListener {
     private final AccountsTreeTableModel accountsModel;
@@ -38,6 +39,7 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
             table.setDefaultEditor(BigDecimal.class, new CurrencyCellEditor());
             table.setDefaultRenderer(Account.class, new AccountCellRenderer());
             table.setDefaultEditor(Account.class, new AccountCellEditor(account, accountsModel));
+            table.setDefaultEditor(LocalDate.class, new SpinnerCellEditor(new SpinnerDateModel()));
             add(new JScrollPane(table), tab);
 
             String accountName = account.getName();

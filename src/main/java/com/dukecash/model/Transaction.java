@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Transaction {
-    private final LocalDate date;
+    private LocalDate date;
     private String description;
     private final List<Split> splits = new ArrayList<>();
 
@@ -20,6 +20,10 @@ public class Transaction {
 
     public LocalDate getDate() {
         return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
     public String getDescription() {
@@ -45,15 +49,19 @@ public class Transaction {
         return null;
     }
 
-    public void updateAccount(Account fromAccount, Account toAccount) {
+    public boolean updateAccount(Account fromAccount, Account toAccount) {
         if (splits.size() == 2) {
             for (Split split : splits) {
                 if (split.getAccount() != fromAccount) {
-                    split.setAccount(toAccount);
-                    return;
+                    if (split.getAccount() != toAccount) {
+                        split.setAccount(toAccount);
+                        return true;
+                    }
+                    return false;
                 }
             }
         }
+        return false;
     }
 
     public BigDecimal findAmountForAccount(Account account) {
