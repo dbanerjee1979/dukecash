@@ -8,6 +8,7 @@ import javax.swing.table.DefaultTableModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,6 +28,16 @@ class FilteringTableModelTest {
                     case 1 -> Boolean.class;
                     default -> super.getColumnClass(column);
                 };
+            }
+
+            @SuppressWarnings({"rawtypes", "unchecked"})
+            @Override
+            public void setDataVector(Object[][] dataVector, Object[] columnIdentifiers) {
+                this.dataVector.clear();
+                for (Object[] row : dataVector) {
+                    this.dataVector.add(new Vector(List.of(row)));
+                }
+                fireTableDataChanged();
             }
         };
         source.addColumn("Food");
@@ -60,7 +71,7 @@ class FilteringTableModelTest {
         assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(1, 1));
         assertEquals("Grape", filteringTableModel.getValueAt(2, 0));
         assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(2, 1));
-        assertThrows(ArrayIndexOutOfBoundsException.class, () -> filteringTableModel.getValueAt(3, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> filteringTableModel.getValueAt(3, 1));
     }
 
     @Test
@@ -340,5 +351,24 @@ class FilteringTableModelTest {
         TableModelEvent event = events.getFirst();
         assertEquals(TableModelEvent.UPDATE, event.getType());
         assertEquals(TableModelEvent.HEADER_ROW, event.getFirstRow());
+    }
+
+
+
+    @Test
+    void testDataChanged() {
+        source.setDataVector(new Object[][] {
+                new Object[] { "Kiwi", true },
+                new Object[] { "Orange", true },
+                new Object[] { "Pineapple", true }
+        }, null);
+
+        assertEquals(3, filteringTableModel.getRowCount());
+
+        assertEquals(1, events.size());
+        TableModelEvent event = events.getFirst();
+        assertEquals(TableModelEvent.UPDATE, event.getType());
+        assertEquals(0, event.getFirstRow());
+        assertEquals(Integer.MAX_VALUE, event.getLastRow());
     }
 }

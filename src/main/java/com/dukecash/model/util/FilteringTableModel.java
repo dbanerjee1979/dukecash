@@ -138,6 +138,12 @@ public class FilteringTableModel extends AbstractTableModel {
             return;
         }
 
+        if (ev.getLastRow() == Integer.MAX_VALUE) {
+            rebuild();
+            fireTableDataChanged();
+            return;
+        }
+
         for (int sourceRow = ev.getFirstRow(); sourceRow <= ev.getLastRow(); sourceRow++) {
             if (!isIncluded.test(sourceRow)) {
                 int viewRow = Arrays.binarySearch(viewToSourceRow, 0, viewRowCount, sourceRow);
