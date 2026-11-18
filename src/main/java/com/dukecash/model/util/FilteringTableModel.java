@@ -4,6 +4,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 public class FilteringTableModel extends AbstractTableModel {
@@ -41,9 +42,7 @@ public class FilteringTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int row, int column) {
-        if (row < 0 || row >= viewRowCount) {
-            throw new ArrayIndexOutOfBoundsException("index %s is out of bounds, size: %s".formatted(row, viewRowCount));
-        }
+        Objects.checkIndex(row, viewRowCount);
         int sourceRow = viewToSourceRow[row];
         return source.getValueAt(sourceRow, column);
     }
