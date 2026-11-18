@@ -11,8 +11,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AbstractFilteringTableModelTest {
-    private AbstractFilteringTableModel filteringTableModel;
+class FilteringTableModelTest {
+    private FilteringTableModel filteringTableModel;
     private DefaultTableModel source;
     private List<TableModelEvent> events;
 
@@ -36,12 +36,9 @@ class AbstractFilteringTableModelTest {
         source.addRow(new Object[] { "Apple", true });
         source.addRow(new Object[] { "Grape", true });
 
-        this.filteringTableModel = new AbstractFilteringTableModel(source) {
-            @Override
-            protected boolean isIncluded(int sourceRow) {
-                return Boolean.TRUE.equals(source.getValueAt(sourceRow, 1));
-            }
-        };
+        this.filteringTableModel = new FilteringTableModel(
+                source,
+                sourceRow -> Boolean.TRUE.equals(source.getValueAt(sourceRow, 1)));
         filteringTableModel.addTableModelListener(events::add);
     }
 

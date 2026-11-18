@@ -4,19 +4,20 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import java.util.Arrays;
+import java.util.function.Predicate;
 
-public abstract class AbstractFilteringTableModel extends AbstractTableModel {
+public class FilteringTableModel extends AbstractTableModel {
     protected final DefaultTableModel source;
+    private final Predicate<Integer> isIncluded;
     private int[] viewToSourceRow = new int[0];
     private int viewRowCount = 0;
 
-    public AbstractFilteringTableModel(DefaultTableModel source) {
+    public FilteringTableModel(DefaultTableModel source, Predicate<Integer> isIncluded) {
         this.source = source;
+        this.isIncluded = isIncluded;
         rebuild();
         source.addTableModelListener(this::onSourceChanged);
     }
-
-    protected abstract boolean isIncluded(int sourceRow);
 
     @Override
     public int getRowCount() {
@@ -65,7 +66,7 @@ public abstract class AbstractFilteringTableModel extends AbstractTableModel {
         viewToSourceRow = new int[source.getRowCount()];
         viewRowCount = 0;
         for (int sourceRow = 0; sourceRow < source.getRowCount(); sourceRow++) {
-            if (isIncluded(sourceRow)) {
+            if (isIncluded.test(sourceRow)) {
                 viewToSourceRow[viewRowCount++] = sourceRow;
             }
         }
@@ -83,7 +84,7 @@ public abstract class AbstractFilteringTableModel extends AbstractTableModel {
         int insertedStart = -1;
         int insertedEnd = -1;
         for (sourceRow = ev.getFirstRow(); sourceRow <= ev.getLastRow(); sourceRow++) {
-            if (isIncluded(sourceRow)) {
+            if (isIncluded.test(sourceRow)) {
                 insertedEnd = buildRowCount;
                 if (insertedStart == -1) {
                     insertedStart = buildRowCount;
@@ -135,7 +136,7 @@ public abstract class AbstractFilteringTableModel extends AbstractTableModel {
         }
 
         for (int sourceRow = ev.getFirstRow(); sourceRow <= ev.getLastRow(); sourceRow++) {
-            if (!isIncluded(sourceRow)) {
+            if (!isIncluded.test(sourceRow)) {
                 int viewRow = Arrays.binarySearch(viewToSourceRow, sourceRow);
                 viewRowCount--;
                 System.arraycopy(viewToSourceRow, viewRow + 1, viewToSourceRow, viewRow, viewRowCount - viewRow);
