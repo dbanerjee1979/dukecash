@@ -2,17 +2,17 @@ package com.dukecash.model.util;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import java.util.Arrays;
 import java.util.function.Predicate;
 
 public class FilteringTableModel extends AbstractTableModel {
-    protected final DefaultTableModel source;
+    protected final TableModel source;
     private final Predicate<Integer> isIncluded;
     private int[] viewToSourceRow = new int[0];
     private int viewRowCount = 0;
 
-    public FilteringTableModel(DefaultTableModel source, Predicate<Integer> isIncluded) {
+    public FilteringTableModel(TableModel source, Predicate<Integer> isIncluded) {
         this.source = source;
         this.isIncluded = isIncluded;
         rebuild();
@@ -60,6 +60,10 @@ public class FilteringTableModel extends AbstractTableModel {
                 handleUpdate(ev);
                 break;
         }
+    }
+
+    protected int getSourceRowForViewRow(int viewRow) {
+        return viewToSourceRow[viewRow];
     }
 
     private void rebuild() {
@@ -137,22 +141,27 @@ public class FilteringTableModel extends AbstractTableModel {
 
         for (int sourceRow = ev.getFirstRow(); sourceRow <= ev.getLastRow(); sourceRow++) {
             if (!isIncluded.test(sourceRow)) {
-                int viewRow = Arrays.binarySearch(viewToSourceRow, sourceRow);
-                viewRowCount--;
-                System.arraycopy(viewToSourceRow, viewRow + 1, viewToSourceRow, viewRow, viewRowCount - viewRow);
-                fireTableRowsDeleted(viewRow, viewRow);
+                int viewRow = Arrays.binarySearch(viewToSourceRow, 0, viewRowCount, sourceRow);
+                if (viewRow >= 0) {
+                    viewRowCount--;
+                    System.arraycopy(viewToSourceRow, viewRow + 1, viewToSourceRow, viewRow, viewRowCount - viewRow);
+                    fireTableRowsDeleted(viewRow, viewRow);
+                }
             } else {
                 int viewRow;
-                for (viewRow = 0; viewRow < viewRowCount && viewToSourceRow[viewRow] < sourceRow; viewRow++) {
+                int existingSourceRow = -1;
+                for (viewRow = 0; viewRow < viewRowCount && (existingSourceRow = viewToSourceRow[viewRow]) < sourceRow; viewRow++) {
                     // Skip past rows preceding the change
                 }
-                int[] build = new int[viewRowCount + 1];
-                System.arraycopy(viewToSourceRow, 0, build, 0, viewRow);
-                build[viewRow] = sourceRow;
-                System.arraycopy(viewToSourceRow, viewRow, build, viewRow + 1, viewRowCount - viewRow);
-                viewToSourceRow = build;
-                viewRowCount++;
-                fireTableRowsInserted(viewRow, viewRow);
+                if (existingSourceRow != sourceRow) {
+                    int[] build = new int[viewRowCount + 1];
+                    System.arraycopy(viewToSourceRow, 0, build, 0, viewRow);
+                    build[viewRow] = sourceRow;
+                    System.arraycopy(viewToSourceRow, viewRow, build, viewRow + 1, viewRowCount - viewRow);
+                    viewToSourceRow = build;
+                    viewRowCount++;
+                    fireTableRowsInserted(viewRow, viewRow);
+                }
             }
         }
     }

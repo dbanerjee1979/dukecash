@@ -252,6 +252,22 @@ class FilteringTableModelTest {
     }
 
     @Test
+    void testUpdateDoesNotChangeFilterCondition() {
+        source.setValueAt(true, 0, 1);
+
+        assertEquals(3, filteringTableModel.getRowCount());
+
+        assertEquals("Tomato", filteringTableModel.getValueAt(0, 0));
+        assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(0, 1));
+        assertEquals("Apple", filteringTableModel.getValueAt(1, 0));
+        assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(1, 1));
+        assertEquals("Grape", filteringTableModel.getValueAt(2, 0));
+        assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(2, 1));
+
+        assertEquals(0, events.size());
+    }
+
+    @Test
     void testUpdateAdds() {
         source.addRow(new Object[] { "Corn", false });
         events.clear();
@@ -276,6 +292,42 @@ class FilteringTableModelTest {
         assertEquals(TableModelEvent.INSERT, event.getType());
         assertEquals(3, event.getFirstRow());
         assertEquals(3, event.getLastRow());
+    }
+
+    @Test
+    void testUpdateToEmpties() {
+        source.setValueAt(false, 0, 1);
+        source.setValueAt(false, 2, 1);
+        source.setValueAt(false, 3, 1);
+
+        assertEquals(0, filteringTableModel.getRowCount());
+
+        assertEquals(3, events.size());
+        assertEquals(TableModelEvent.DELETE, events.get(0).getType());
+        assertEquals(0, events.get(0).getFirstRow());
+        assertEquals(0, events.get(0).getLastRow());
+        assertEquals(TableModelEvent.DELETE, events.get(1).getType());
+        assertEquals(0, events.get(1).getFirstRow());
+        assertEquals(0, events.get(1).getLastRow());
+        assertEquals(TableModelEvent.DELETE, events.get(2).getType());
+        assertEquals(0, events.get(2).getFirstRow());
+        assertEquals(0, events.get(2).getLastRow());
+    }
+
+    @Test
+    void testUpdateToNotIncluded() {
+        source.setValueAt(false, 1, 1);
+
+        assertEquals(3, filteringTableModel.getRowCount());
+
+        assertEquals("Tomato", filteringTableModel.getValueAt(0, 0));
+        assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(0, 1));
+        assertEquals("Apple", filteringTableModel.getValueAt(1, 0));
+        assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(1, 1));
+        assertEquals("Grape", filteringTableModel.getValueAt(2, 0));
+        assertEquals(Boolean.TRUE, filteringTableModel.getValueAt(2, 1));
+
+        assertEquals(0, events.size());
     }
 
     @Test
