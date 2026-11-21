@@ -353,8 +353,6 @@ class FilteringTableModelTest {
         assertEquals(TableModelEvent.HEADER_ROW, event.getFirstRow());
     }
 
-
-
     @Test
     void testDataChanged() {
         source.setDataVector(new Object[][] {

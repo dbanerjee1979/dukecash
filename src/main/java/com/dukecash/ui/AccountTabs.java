@@ -1,6 +1,7 @@
 package com.dukecash.ui;
 
 import com.dukecash.model.*;
+import com.dukecash.model.util.SortingTableModel;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -32,7 +33,7 @@ public class AccountTabs extends JTabbedPane implements ListDataListener, ListSe
             Account account = openAccounts.get(i);
 
             JTable table = new JTable(new SortingTableModel(new AccountTransactionModel(account, transactionsModel),
-                    TransactionsModel.COL_DATE));
+                    TransactionsModel.COL_DATE, true));
             table.setDefaultRenderer(BigDecimal.class, new CurrencyCellRenderer());
             table.setDefaultEditor(BigDecimal.class, new CurrencyCellEditor());
             table.setDefaultRenderer(Account.class, new AccountCellRenderer());
